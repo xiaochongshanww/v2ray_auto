@@ -1,0 +1,37 @@
+{
+  "inbounds": [
+    {
+      "port": 10808,
+      "protocol": "socks",
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls"
+        ]
+      },
+      "settings": {
+        "auth": "noauth"
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "vmess",
+      "settings": {
+        "vnext": [
+          {
+            "address": "167.179.103.98",
+            "port": 16823,
+            "users": [
+              {
+                "id": "7410f33e-0f3f-4a23-87c5-4ee6ec0da42a",
+                "alterId": 0
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

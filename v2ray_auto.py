@@ -1,9 +1,15 @@
+# -*- coding: utf-8 -*-
 import os
 import re
+import time
 
 import requests
+import select
+
 import config
 import subprocess
+import threading
+import pexpect
 
 
 class V2RayAuto:
@@ -43,21 +49,47 @@ class V2RayAuto:
 
         :return:
         """
-        if self.is_v2ray_install():
-            self.uninstall_v2ray()
-        resp = subprocess.check_output(self.curl_cmd, shell=True)
-        resp = subprocess.check_output("1", shell=True)
-        resp = subprocess.check_output("\n", shell=True)
-        resp = subprocess.check_output("\n", shell=True)
-        resp = subprocess.check_output("\n", shell=True)
-        resp = subprocess.check_output("Y", shell=True)
-        resp = subprocess.check_output("\n", shell=True)
-        resp = subprocess.check_output("\n", shell=True)
-        resp = subprocess.check_output("\n", shell=True)
-        resp = subprocess.check_output("\n", shell=True)
-        resp = subprocess.check_output("\n", shell=True)
+        # if self.is_v2ray_install():
+        #     self.uninstall_v2ray()
+        print("sub_process start")
+        sub_process = subprocess.Popen(['bash', '-c', 'curl -s -L https://raw.githubusercontent.com/wcg14231022/233boy_v2ray_backup/master/install.sh | bash'],
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL)
+        print("1\nstart")
+        # sub_process.stdin.write('1'.encode())
+        # sub_process.stdin.flush()
+        # sub_process.stdin.close()
+        print("1\nend")
+        while True:
+            line = sub_process.stdout.readline().decode("utf-8").rstrip()
+            if not line:
+                pass
+            if line:
+                print(line)
+        for line in iter(sub_process.stdout.readline, b""):
+            print(line.decode("utf-8").rstrip())
+
+        # sub_process.communicate(input='\n'.encode())
+        # sub_process.communicate(input='\n'.encode())
+        # sub_process.communicate(input='Y\n'.encode())
+        # sub_process.communicate(input='\n'.encode())
+        # sub_process.communicate(input='\n'.encode())
+        # sub_process.communicate(input='\n'.encode())
+        # sub_process.communicate(input='\n'.encode())
+
         print("last resp:")
-        print(resp)
+        # resp = subprocess.check_output(self.curl_cmd, shell=True)
+        # resp = subprocess.check_output("1", shell=True)
+        # resp = subprocess.check_output("\n", shell=True)
+        # resp = subprocess.check_output("\n", shell=True)
+        # resp = subprocess.check_output("\n", shell=True)
+        # resp = subprocess.check_output("Y", shell=True)
+        # resp = subprocess.check_output("\n", shell=True)
+        # resp = subprocess.check_output("\n", shell=True)
+        # resp = subprocess.check_output("\n", shell=True)
+        # resp = subprocess.check_output("\n", shell=True)
+        # resp = subprocess.check_output("\n", shell=True)
+
+        # print(resp)
 
     def is_v2ray_install(self):
         """
