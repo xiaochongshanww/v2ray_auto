@@ -10,6 +10,8 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 
 log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log_file/my_log.log")
+if not os.path.exists(os.path.dirname(log_file_path)):
+    os.mkdir(os.path.dirname(log_file_path))
 with open(log_file_path, 'w') as file:
     file.write("log file")
 # 创建文件处理器
