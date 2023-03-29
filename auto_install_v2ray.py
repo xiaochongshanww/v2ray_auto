@@ -1,10 +1,4 @@
-import base64
-import subprocess
-import uuid
-import json
-import config
-import random
-import requests
+from common import *
 
 
 class MyV2Ray:
@@ -22,6 +16,7 @@ class MyV2Ray:
 
         :return:
         """
+        logger.info("开始自动安装V2Ray...")
         self.get_uuid()
         self.init_server_config()
         self.init_client_config()
@@ -51,7 +46,7 @@ class MyV2Ray:
         self.client_config = config_data
         users = [{"id": f"{self.uuid}", "alterId": 0}]
         self.client_config["outbounds"][0]["settings"]["vnext"][0]["users"] = users
-        self.client_config["outbounds"][0]["settings"]["vnext"][0]["address"] = MyV2Ray.get_public_network_ip()
+        self.client_config["outbounds"][0]["settings"]["vnext"][0]["address"] = V2RayPublicMethod.get_public_network_ip()
 
     @staticmethod
     def auto_install():
@@ -75,12 +70,14 @@ class MyV2Ray:
 
         :return:
         """
+        logger.info("start v2ray")
         print("start v2ray")
         result = subprocess.Popen("systemctl enable v2ray", shell=True, stdout=subprocess.PIPE)
         print(result.stdout.read().decode('utf-8'))
         result = subprocess.Popen("systemctl start v2ray", shell=True, stdout=subprocess.PIPE)
         print(result.stdout.read().decode('utf-8'))
         print("start v2ray finished")
+        logger.info("start v2ray finished")
 
     @staticmethod
     def stop_v2ray():
@@ -89,10 +86,10 @@ class MyV2Ray:
 
         :return:
         """
-        print("stop v2ray")
+        logger.info("stop v2ray")
         result = subprocess.Popen("systemctl stop v2ray", shell=True, stdout=subprocess.PIPE)
-        print(result.stdout.read().decode('utf-8'))
-        print("stop v2ray finished")
+        logger.info(result.stdout.read().decode('utf-8'))
+        logger.info("stop v2ray finished")
 
     def get_uuid(self):
         """
@@ -101,7 +98,7 @@ class MyV2Ray:
         :return: None
         """
         uuid_value = uuid.uuid4()
-        print(f"生成的uuid: {str(uuid_value)}")
+        logger.info(f"生成的uuid: {str(uuid_value)}")
         self.uuid = str(uuid_value)
 
     @staticmethod
@@ -148,22 +145,10 @@ class MyV2Ray:
 
         :return: int
         """
-        print("获取随机端口：")
+        logger.info("获取随机端口：")
         rand_port = random.randint(1000, 65535)
-        print(f"随机端口为: {rand_port}")
+        logger.info(f"随机端口为: {rand_port}")
         return rand_port
-
-    @staticmethod
-    def get_public_network_ip():
-        """
-        获取服务器的公网ip地址
-
-        :return:
-        """
-        response = requests.get("http://ipinfo.io/ip")  # 向 http://ipinfo.io/ip 发送 HTTP 请求
-        public_ip = response.text.strip()  # 从响应中获取服务器的公网 IP 地址
-        print(public_ip)
-        return public_ip
 
     def generate_v2ray_vmess_url(self):
         """
@@ -200,7 +185,7 @@ class MyV2Ray:
         # 组装 vmess URL
         vmess_url = "vmess://" + encoded_vmess
         self.client_config_vmess_url = vmess_url
-        print(f"vmess_url: {vmess_url}")
+        logger.info(f"vmess_url: {vmess_url}")
         return vmess_url
 
     def send_url_to_email(self):
@@ -240,9 +225,35 @@ class MyV2Ray:
             smtpObj.starttls()  # 开启TLS加密
             smtpObj.login(username, password)  # 登录邮箱账号
             smtpObj.sendmail(sender, receiver, message.as_string())  # 发送邮件
-            print("邮件发送成功")
+            logger.info("邮件发送成功")
         except smtplib.SMTPException:
-            print("Error: 无法发送邮件")
+            logger.error("无法发送邮件")
+
+
+    @staticmethod
+    def ip_detect_service():
+        script_path = os.path.join(os.getcwd(), "ip_detect/ip_detect.py")  # 定义 Python 脚本路径
+        # 创建 Systemd 配置文件
+        service_file_content = f"""\
+        [Unit]
+        Description=My Python Service
+        After=network.target
+    
+        [Service]
+        User={os.getlogin()}
+        ExecStart=/usr/bin/python {script_path}
+        Restart=always
+    
+        [Install]
+        WantedBy=multi-user.target
+        """
+        # 写入配置文件
+        with open("/etc/systemd/system/my_ip_detect_service.service", "w") as f:
+            f.write(service_file_content)
+        os.system("sudo systemctl daemon-reload")  # 重新加载 Systemd 配置文件
+        os.system("sudo systemctl stop my_ip_detect_service")  # 启动前先stop服务
+        os.system("sudo systemctl start my_ip_detect_service")  # 启动服务
+        os.system("sudo systemctl enable my_ip_detect_service")  # 设置开机自启动
 
 
 if __name__ == "__main__":
@@ -253,3 +264,4 @@ if __name__ == "__main__":
     my.write_client_config()
     my.generate_v2ray_vmess_url()
     my.send_url_to_email()
+    my.ip_detect_service()
