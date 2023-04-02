@@ -7,7 +7,7 @@ class V2RayEmail:
     def __init__(self):
         self.my_email = "wcg14231022@gmail.com"
         self.my_user = "wcg14231022@gmail.com"
-        self.my_email_key = config.GMAIL_CODE
+        self.my_email_key = V2RayEmail.get_email_key()
         self.target_email = "327306310@qq.com"
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
@@ -42,3 +42,14 @@ class V2RayEmail:
             logger.info("邮件发送成功")
         except smtplib.SMTPException:
             logger.error("无法发送邮件")
+
+    @staticmethod
+    def get_email_key():
+        """
+        获取邮箱应用密码
+        :return:
+        """
+        response = requests.get("http://www.xiaochongshan.xyz:5000/email-key")
+        if response.status_code == 200:
+            data = response.text
+        return data
