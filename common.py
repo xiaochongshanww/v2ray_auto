@@ -15,6 +15,7 @@ import time
 import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
+from bs4 import BeautifulSoup
 
 from log.my_log import logger
 from mail.v2ray_email import V2RayEmail
