@@ -7,7 +7,8 @@ class V2RayEmail:
     def __init__(self):
         self.my_email = "wcg14231022@gmail.com"
         self.my_user = "wcg14231022@gmail.com"
-        self.my_email_key = V2RayEmail.get_email_key()
+        # self.my_email_key = V2RayEmail.get_email_key()
+        self.my_email_key = config.GMAIL_CODE
         self.target_email = "327306310@qq.com"
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
