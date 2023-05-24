@@ -35,6 +35,7 @@ class V2rayAutoClient:
         self.install_git()
         self.clone_v2ray_auto_code()
         self.install_python_requirements()
+        self.auto_config_v2ray_service()
 
     def login_server(self):
         """
@@ -174,7 +175,7 @@ class V2rayAutoClient:
         """
         logger.info("开始克隆v2ray-auto代码")
         self.execute_command("mkdir -p /home/git_dir")
-        clone_command = "git clone https://github.com/wcg14231022/v2ray_auto.git /home/git_dir"
+        clone_command = "git clone https://github.com/wcg14231022/v2ray_auto.git /home/git_dir/v2ray_auto"
         self.execute_command(clone_command)
         logger.info("克隆v2ray-auto代码完成")
 
@@ -194,5 +195,6 @@ class V2rayAutoClient:
         :return:
         """
         logger.info("开始自动配置v2ray服务")
-        self.execute_command("sudo python3 /home/git_dir/v2ray_auto/auto_install_v2ray.py")
+        self.execute_command("cd /home/git_dir/v2ray_auto && sudo python3 "
+                             "/home/git_dir/v2ray_auto/auto_install_v2ray.py")
         logger.info("自动配置v2ray服务完成")
