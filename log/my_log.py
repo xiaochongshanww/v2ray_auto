@@ -1,12 +1,13 @@
 import logging
 import os.path
+import sys
 
 # 创建全局日志器
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # 创建控制台处理器
-console_handler = logging.StreamHandler()
+console_handler = logging.StreamHandler(sys.stdout)  # 日志记录到标准输出
 console_handler.setLevel(logging.DEBUG)
 
 log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log_file/my_log.log")

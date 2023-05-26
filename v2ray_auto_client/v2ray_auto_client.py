@@ -1,4 +1,6 @@
 # -*- coding:utf-8 -*-
+import re
+
 import distro
 import paramiko
 import platform
@@ -18,6 +20,7 @@ class V2rayAutoClient:
         :return:
         """
         logger.info("开始初始化环境信息")
+        logger.info(f"用户参数: {json.dumps(self.params, indent=4, ensure_ascii=False)}")
         self.env["server_ip"] = self.params["server_ip"]
         self.env["server_port"] = self.params["server_port"]
         self.env["server_username"] = self.params["server_username"]
@@ -30,12 +33,14 @@ class V2rayAutoClient:
         :return:
         """
         self.login_server()
+        self.change_to_root_user()
         self.server_update()
         self.auto_install_python()
         self.install_git()
         self.clone_v2ray_auto_code()
         self.install_python_requirements()
-        self.auto_config_v2ray_service()
+        vmess = self.auto_config_v2ray_service()
+        return vmess
 
     def login_server(self):
         """
@@ -43,10 +48,19 @@ class V2rayAutoClient:
         :return:
         """
         logger.info("开始登录服务器")
-        self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())   # 允许连接不在know_hosts文件中的主机
+        self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # 允许连接不在know_hosts文件中的主机
         self.ssh_client.connect(hostname=self.env["server_ip"], port=self.env["server_port"],
                                 username=self.env["server_username"], password=self.env["server_password"])
         logger.info("登录服务器完成")
+
+    def change_to_root_user(self):
+        """
+        切换到root用户
+        :return:
+        """
+        logger.info("开始切换到root用户")
+        self.execute_command(f"echo {self.env.get('server_password')} | sudo -S su")
+        logger.info("切换到root用户完成")
 
     def server_update(self):
         """
@@ -58,9 +72,9 @@ class V2rayAutoClient:
         dis_version = self.get_linux_distro()
         if dis_version:
             if dis_version in ['ubuntu', 'debian']:
-                command = 'apt-get update && apt-get upgrade -y'  # Ubuntu/Debian系统使用apt-get命令更新
+                command = 'sudo apt-get update && sudo apt-get upgrade -y'  # Ubuntu/Debian系统使用apt-get命令更新
             elif dis_version in ['centos', 'redhat', 'fedora']:
-                command = 'yum update -y'  # CentOS/RHEL/Fedora系统使用yum命令更新
+                command = 'sudo yum update -y'  # CentOS/RHEL/Fedora系统使用yum命令更新
             else:
                 logger.info("不支持的操作系统版本")
                 return
@@ -123,9 +137,9 @@ class V2rayAutoClient:
         """
         linux_distribute = self.env["linux_distribute"]
         if linux_distribute in ['ubuntu', 'debian']:
-            return "apt-get install python3 -y"
+            return "sudo apt-get install python3 -y"
         elif linux_distribute in ['centos', 'redhat', 'fedora']:
-            return "yum install python3 -y"
+            return "sudo yum install python3 -y"
         else:
             logger.error("不支持的操作系统类型")
             return None
@@ -137,9 +151,9 @@ class V2rayAutoClient:
         """
         linux_distribute = self.env["linux_distribute"]
         if linux_distribute in ['ubuntu', 'debian']:
-            return "apt-get install python3-pip -y"
+            return "sudo apt-get install python3-pip -y"
         elif linux_distribute in ['centos', 'redhat', 'fedora']:
-            return "yum install python3-pip -y"
+            return "sudo yum install python3-pip -y"
         else:
             logger.error("不支持的操作系统类型")
             return None
@@ -161,9 +175,9 @@ class V2rayAutoClient:
         """
         linux_distribute = self.env["linux_distribute"]
         if linux_distribute in ['ubuntu', 'debian']:
-            return "apt-get install git -y"
+            return "sudo apt-get install git -y"
         elif linux_distribute in ['centos', 'redhat', 'fedora']:
-            return "yum install git -y"
+            return "sudo yum install git -y"
         else:
             logger.error("不支持的操作系统类型")
             return None
@@ -174,8 +188,12 @@ class V2rayAutoClient:
         :return:
         """
         logger.info("开始克隆v2ray-auto代码")
-        self.execute_command("mkdir -p /home/git_dir")
+        linux_distribute = self.env["linux_distribute"]
+        self.execute_command("sudo rm -rf /home/git_dir/")
+        self.execute_command("sudo mkdir -p /home/git_dir")
         clone_command = "git clone https://github.com/wcg14231022/v2ray_auto.git /home/git_dir/v2ray_auto"
+        # if linux_distribute in ['ubuntu']:
+        #     clone_command = f"git clone https://github.com/wcg14231022/v2ray_auto.git /home/{self.env.get('server_username')}/git_dir/v2ray_auto"
         self.execute_command(clone_command)
         logger.info("克隆v2ray-auto代码完成")
 
@@ -185,7 +203,11 @@ class V2rayAutoClient:
         :return:
         """
         logger.info("开始安装python依赖")
-        install_command = "pip install -r /home/git_dir/requirements.txt"
+        linux_distribute = self.env["linux_distribute"]
+        install_command = "sudo pip install -r /home/git_dir/requirements.txt"
+        # if linux_distribute in ['ubuntu']:
+        #     install_command = f"sudo pip3 install -r /home/{self.env.get('server_username')}/git_dir/v2ray_auto/requirements.txt"
+        logger.info(f"安装python依赖命令: {install_command}")
         self.execute_command(install_command)
         logger.info("安装python依赖完成")
 
@@ -195,6 +217,15 @@ class V2rayAutoClient:
         :return:
         """
         logger.info("开始自动配置v2ray服务")
-        self.execute_command("cd /home/git_dir/v2ray_auto && sudo python3 "
-                             "/home/git_dir/v2ray_auto/auto_install_v2ray.py")
+        linux_distribute = self.env["linux_distribute"]
+        config_command = "cd /home/git_dir/v2ray_auto && sudo python3 /home/git_dir/v2ray_auto/auto_install_v2ray.py"
+        # if linux_distribute in ['ubuntu']:
+        #     config_command = f"cd /home/{self.env.get('server_username')}/git_dir/v2ray_auto && sudo python3 " \
+        #                      f"/home/{self.env.get('server_username')}/git_dir/v2ray_auto/auto_install_v2ray.py"
+        logger.info(f"配置命令: {config_command}")
+        rs = self.execute_command(config_command)
+        logger.info(f"配置结果: {rs}")
+        vmess = re.findall(r"vmess_url:\s*(\S+)\n", rs, re.I | re.M)[0]
         logger.info("自动配置v2ray服务完成")
+        logger.info(f"获取到的vmess: {vmess}")
+        return vmess
