@@ -67,4 +67,4 @@ if __name__ == "__main__":
             cur_ip_address = V2RayPublicMethod.get_public_network_ip()
             v2ray_email.set_message(f"your ip address {cur_ip_address} is active")
             v2ray_email.send_email()
-        time.sleep(28800)  # 每小时检测一次
+        time.sleep(86400)  # 每小时检测一次
