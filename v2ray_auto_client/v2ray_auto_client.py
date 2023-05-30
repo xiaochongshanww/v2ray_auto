@@ -5,14 +5,19 @@ import distro
 import paramiko
 import platform
 from common import *
+from textbox_handler import TextboxHandler
 
 
 class V2rayAutoClient:
-    def __init__(self, params):
+    def __init__(self, params, textbox_callback=None):
         self.params = params
         self.env = dict()  # 环境信息
         self.ssh_client = paramiko.SSHClient()
         self.init_env_info()
+
+        if textbox_callback:
+            handler = TextboxHandler(textbox_callback)
+            logger.addHandler(handler)
 
     def init_env_info(self):
         """

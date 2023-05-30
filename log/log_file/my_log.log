@@ -1,83 +1,88 @@
-log file2023-05-29 01:58:19,277 - log.my_log - INFO - 开始初始化环境信息
-2023-05-29 01:58:19,277 - log.my_log - INFO - 用户参数: {
+log file2023-05-31 00:42:38,189 - log.my_log - INFO - 开始初始化环境信息
+2023-05-31 00:42:38,190 - log.my_log - INFO - 用户参数: {
     "server_ip": "143.198.94.159",
     "server_port": "22",
     "server_username": "root",
     "server_password": "##19960310wcgWCG",
     "os": "centos"
 }
-2023-05-29 01:58:19,277 - log.my_log - INFO - 初始化环境信息完成
-2023-05-29 01:58:19,277 - log.my_log - INFO - 开始登录服务器
-2023-05-29 01:58:23,050 - log.my_log - INFO - 登录服务器完成
-2023-05-29 01:58:23,050 - log.my_log - INFO - 开始切换到root用户
-2023-05-29 01:58:24,103 - log.my_log - INFO - [143.198.94.159: 22]: echo ##19960310wcgWCG | sudo -S su
+2023-05-31 00:42:38,190 - log.my_log - INFO - 初始化环境信息完成
+2023-05-31 00:42:38,190 - log.my_log - INFO - 开始登录服务器
+2023-05-31 00:42:42,240 - log.my_log - INFO - 登录服务器完成
+2023-05-31 00:42:42,240 - log.my_log - INFO - 开始切换到root用户
+2023-05-31 00:42:43,329 - log.my_log - INFO - [143.198.94.159: 22]: echo ##19960310wcgWCG | sudo -S su
 
 
-2023-05-29 01:58:24,103 - log.my_log - INFO - 切换到root用户完成
-2023-05-29 01:58:24,103 - log.my_log - INFO - 开始更新服务器
-2023-05-29 01:58:25,098 - log.my_log - INFO - [143.198.94.159: 22]: pwd
+2023-05-31 00:42:43,330 - log.my_log - INFO - 切换到root用户完成
+2023-05-31 00:42:43,330 - log.my_log - INFO - 开始更新服务器
+2023-05-31 00:42:44,353 - log.my_log - INFO - [143.198.94.159: 22]: pwd
 /root
 
-2023-05-29 01:58:26,142 - log.my_log - INFO - [143.198.94.159: 22]: cat /etc/os-release | grep -E "^ID="
+2023-05-31 00:42:45,414 - log.my_log - INFO - [143.198.94.159: 22]: cat /etc/os-release | grep -E "^ID="
 ID="centos"
 
-2023-05-29 01:58:26,143 - log.my_log - INFO - Linux操作系统类型: centos
-2023-05-29 01:58:28,901 - log.my_log - INFO - [143.198.94.159: 22]: sudo yum update -y
-Last metadata expiration check: 0:02:06 ago on Sun 28 May 2023 05:56:22 PM UTC.
+2023-05-31 00:42:45,414 - log.my_log - INFO - Linux操作系统类型: centos
+2023-05-31 00:42:49,041 - log.my_log - INFO - [143.198.94.159: 22]: sudo yum update -y
+DigitalOcean Droplet Agent                       10 kB/s | 3.3 kB     00:00    
 Dependencies resolved.
 Nothing to do.
 Complete!
 
-2023-05-29 01:58:28,902 - log.my_log - INFO - 更新服务器完成
-2023-05-29 01:58:28,902 - log.my_log - INFO - 开始自动安装Python
-2023-05-29 01:58:31,669 - log.my_log - INFO - [143.198.94.159: 22]: sudo yum install python3 -y
-Last metadata expiration check: 0:02:09 ago on Sun 28 May 2023 05:56:22 PM UTC.
+2023-05-31 00:42:49,041 - log.my_log - INFO - 更新服务器完成
+2023-05-31 00:42:49,042 - log.my_log - INFO - 开始自动安装Python
+2023-05-31 00:42:51,724 - log.my_log - INFO - [143.198.94.159: 22]: sudo yum install python3 -y
+Last metadata expiration check: 0:00:03 ago on Tue 30 May 2023 04:42:48 PM UTC.
 Package python3-3.9.16-1.el9.x86_64 is already installed.
 Dependencies resolved.
 Nothing to do.
 Complete!
 
-2023-05-29 01:58:31,669 - log.my_log - INFO - 自动安装Python完成
-2023-05-29 01:58:31,669 - log.my_log - INFO - 开始自动安装pip
-2023-05-29 01:58:34,017 - log.my_log - INFO - [143.198.94.159: 22]: sudo yum install python3-pip -y
-Last metadata expiration check: 0:02:11 ago on Sun 28 May 2023 05:56:22 PM UTC.
+2023-05-31 00:42:51,725 - log.my_log - INFO - 自动安装Python完成
+2023-05-31 00:42:51,725 - log.my_log - INFO - 开始自动安装pip
+2023-05-31 00:42:53,832 - log.my_log - INFO - [143.198.94.159: 22]: sudo yum install python3-pip -y
+Last metadata expiration check: 0:00:05 ago on Tue 30 May 2023 04:42:48 PM UTC.
 Package python3-pip-21.2.3-6.el9.noarch is already installed.
 Dependencies resolved.
 Nothing to do.
 Complete!
 
-2023-05-29 01:58:34,018 - log.my_log - INFO - 自动安装pip完成
-2023-05-29 01:58:34,018 - log.my_log - INFO - 开始安装git
-2023-05-29 01:58:36,219 - log.my_log - INFO - [143.198.94.159: 22]: sudo yum install git -y
-Last metadata expiration check: 0:02:13 ago on Sun 28 May 2023 05:56:22 PM UTC.
+2023-05-31 00:42:53,832 - log.my_log - INFO - 自动安装pip完成
+2023-05-31 00:42:53,832 - log.my_log - INFO - 开始安装git
+2023-05-31 00:42:55,896 - log.my_log - INFO - [143.198.94.159: 22]: sudo yum install git -y
+Last metadata expiration check: 0:00:07 ago on Tue 30 May 2023 04:42:48 PM UTC.
 Package git-2.39.1-1.el9.x86_64 is already installed.
 Dependencies resolved.
 Nothing to do.
 Complete!
 
-2023-05-29 01:58:36,219 - log.my_log - INFO - 安装git完成
-2023-05-29 01:58:36,219 - log.my_log - INFO - 开始克隆v2ray-auto代码
-2023-05-29 01:58:37,281 - log.my_log - INFO - [143.198.94.159: 22]: sudo rm -rf /home/git_dir/
+2023-05-31 00:42:55,896 - log.my_log - INFO - 安装git完成
+2023-05-31 00:42:55,896 - log.my_log - INFO - 开始克隆v2ray-auto代码
+2023-05-31 00:42:56,984 - log.my_log - INFO - [143.198.94.159: 22]: sudo rm -rf /home/git_dir/
 
-2023-05-29 01:58:38,383 - log.my_log - INFO - [143.198.94.159: 22]: sudo mkdir -p /home/git_dir
+2023-05-31 00:42:58,102 - log.my_log - INFO - [143.198.94.159: 22]: sudo mkdir -p /home/git_dir
 
-2023-05-29 01:58:40,366 - log.my_log - INFO - [143.198.94.159: 22]: git clone https://github.com/wcg14231022/v2ray_auto.git /home/git_dir/v2ray_auto
+2023-05-31 00:43:00,036 - log.my_log - INFO - [143.198.94.159: 22]: git clone https://github.com/wcg14231022/v2ray_auto.git /home/git_dir/v2ray_auto
 
-2023-05-29 01:58:40,366 - log.my_log - INFO - [143.198.94.159: 22]:
+2023-05-31 00:43:00,036 - log.my_log - INFO - [143.198.94.159: 22]:
 Command error: Cloning into '/home/git_dir/v2ray_auto'...
 
-2023-05-29 01:58:40,367 - log.my_log - INFO - 克隆v2ray-auto代码完成
-2023-05-29 01:58:40,367 - log.my_log - INFO - 开始安装python依赖
-2023-05-29 01:58:40,367 - log.my_log - INFO - 安装python依赖命令: sudo pip install -r /home/git_dir/requirements.txt
-2023-05-29 01:58:42,355 - log.my_log - INFO - [143.198.94.159: 22]: sudo pip install -r /home/git_dir/requirements.txt
+2023-05-31 00:43:00,036 - log.my_log - INFO - 克隆v2ray-auto代码完成
+2023-05-31 00:43:00,036 - log.my_log - INFO - 开始安装python依赖
+2023-05-31 00:43:00,036 - log.my_log - INFO - 安装python依赖命令: sudo pip install -r /home/git_dir/requirements.txt
+2023-05-31 00:43:02,038 - log.my_log - INFO - [143.198.94.159: 22]: sudo pip install -r /home/git_dir/requirements.txt
 
-2023-05-29 01:58:42,355 - log.my_log - INFO - [143.198.94.159: 22]:
+2023-05-31 00:43:02,038 - log.my_log - INFO - [143.198.94.159: 22]:
 Command error: ERROR: Could not open requirements file: [Errno 2] No such file or directory: '/home/git_dir/requirements.txt'
 
-2023-05-29 01:58:42,355 - log.my_log - INFO - 安装python依赖完成
-2023-05-29 01:58:42,355 - log.my_log - INFO - 开始自动配置v2ray服务
-2023-05-29 01:58:42,355 - log.my_log - INFO - 配置命令: cd /home/git_dir/v2ray_auto && sudo python3 /home/git_dir/v2ray_auto/auto_install_v2ray.py
-2023-05-29 01:58:54,223 - log.my_log - INFO - [143.198.94.159: 22]: cd /home/git_dir/v2ray_auto && sudo python3 /home/git_dir/v2ray_auto/auto_install_v2ray.py
+2023-05-31 00:43:02,039 - log.my_log - INFO - 安装python依赖完成
+2023-05-31 00:43:02,039 - log.my_log - INFO - 开始自动配置v2ray服务
+2023-05-31 00:43:02,039 - log.my_log - INFO - 配置命令: cd /home/git_dir/v2ray_auto && sudo python3 /home/git_dir/v2ray_auto/auto_install_v2ray.py
+2023-05-31 00:43:14,371 - log.my_log - INFO - [143.198.94.159: 22]: cd /home/git_dir/v2ray_auto && sudo python3 /home/git_dir/v2ray_auto/auto_install_v2ray.py
+2023-05-30 16:43:03,325 - log.my_log - INFO - 开始自动安装V2Ray...
+2023-05-30 16:43:03,326 - log.my_log - INFO - 生成的uuid: 9d9529c7-c0b1-4f9f-b7b9-a24d720627f3
+2023-05-30 16:43:03,326 - log.my_log - INFO - 获取随机端口：
+2023-05-30 16:43:03,326 - log.my_log - INFO - 随机端口为: 15023
+2023-05-30 16:43:03,550 - log.my_log - INFO - 本机公网IP: 143.198.94.159
 info: Stop the V2Ray service.
 removed: /usr/local/bin/v2ray
 removed: /usr/local/share/v2ray
@@ -91,10 +96,10 @@ info: V2Ray has been removed.
 info: If necessary, manually delete the configuration and log files.
 info: e.g., /usr/local/etc/v2ray and /var/log/v2ray/ ...
 
-info: Installing V2Ray v5.4.1 for x86_64
-Downloading V2Ray archive: https://github.com/v2fly/v2ray-core/releases/download/v5.4.1/v2ray-linux-64.zip
-Downloading verification file for V2Ray archive: https://github.com/v2fly/v2ray-core/releases/download/v5.4.1/v2ray-linux-64.zip.dgst
-info: Extract the V2Ray package to /tmp/tmp.IUcXF8FMhY and prepare it for installation.
+info: Installing V2Ray v5.5.0 for x86_64
+Downloading V2Ray archive: https://github.com/v2fly/v2ray-core/releases/download/v5.5.0/v2ray-linux-64.zip
+Downloading verification file for V2Ray archive: https://github.com/v2fly/v2ray-core/releases/download/v5.5.0/v2ray-linux-64.zip.dgst
+info: Extract the V2Ray package to /tmp/tmp.uyo5Uzh1c0 and prepare it for installation.
 info: Systemd service files have been installed successfully!
 warning: The following are the actual parameters for the v2ray service startup.
 warning: Please make sure the configuration file path is correctly set.
@@ -128,31 +133,29 @@ installed: /usr/local/share/v2ray/geoip.dat
 installed: /usr/local/share/v2ray/geosite.dat
 installed: /etc/systemd/system/v2ray.service
 installed: /etc/systemd/system/v2ray@.service
-removed: /tmp/tmp.IUcXF8FMhY
-info: V2Ray v5.4.1 is installed.
+removed: /tmp/tmp.uyo5Uzh1c0
+info: V2Ray v5.5.0 is installed.
 You may need to execute a command to remove dependent software: dnf remove curl unzip
 Please execute the command: systemctl enable v2ray; systemctl start v2ray
 
+2023-05-30 16:43:09,595 - log.my_log - INFO - stop v2ray
+2023-05-30 16:43:09,622 - log.my_log - INFO - 
+2023-05-30 16:43:09,622 - log.my_log - INFO - stop v2ray finished
+2023-05-30 16:43:09,622 - log.my_log - INFO - start v2ray
 start v2ray
 
 
 start v2ray finished
+2023-05-30 16:43:10,517 - log.my_log - INFO - start v2ray finished
+2023-05-30 16:43:10,519 - log.my_log - INFO - vmess_url: vmess://eyJ2IjogIjIiLCAicHMiOiAid2NnXzE0My4xOTguOTQuMTU5IiwgImFkZCI6ICIxNDMuMTk4Ljk0LjE1OSIsICJwb3J0IjogMTUwMjMsICJpZCI6ICI5ZDk1MjljNy1jMGIxLTRmOWYtYjdiOS1hMjRkNzIwNjI3ZjMiLCAiYWlkIjogMCwgIm5ldCI6ICJ0Y3AiLCAidHlwZSI6ICJub25lIiwgImhvc3QiOiAiIiwgInBhdGgiOiAiIiwgInRscyI6ICIifQ==
+2023-05-30 16:43:12,931 - log.my_log - INFO - 邮件发送成功
 
-2023-05-29 01:58:54,224 - log.my_log - INFO - [143.198.94.159: 22]:
-Command error: 2023-05-28 17:58:43,574 - log.my_log - INFO - 开始自动安装V2Ray...
-2023-05-28 17:58:43,574 - log.my_log - INFO - 生成的uuid: 63db8275-c29c-45d9-af6d-a6a06376bfcd
-2023-05-28 17:58:43,574 - log.my_log - INFO - 获取随机端口：
-2023-05-28 17:58:43,574 - log.my_log - INFO - 随机端口为: 61210
-2023-05-28 17:58:43,801 - log.my_log - INFO - 本机公网IP: 143.198.94.159
-2023-05-28 17:58:50,192 - log.my_log - INFO - stop v2ray
-2023-05-28 17:58:50,212 - log.my_log - INFO - 
-2023-05-28 17:58:50,214 - log.my_log - INFO - stop v2ray finished
-2023-05-28 17:58:50,214 - log.my_log - INFO - start v2ray
-2023-05-28 17:58:50,712 - log.my_log - INFO - start v2ray finished
-2023-05-28 17:58:50,713 - log.my_log - INFO - vmess_url: vmess://eyJ2IjogIjIiLCAicHMiOiAid2NnXzE0My4xOTguOTQuMTU5IiwgImFkZCI6ICIxNDMuMTk4Ljk0LjE1OSIsICJwb3J0IjogNjEyMTAsICJpZCI6ICI2M2RiODI3NS1jMjljLTQ1ZDktYWY2ZC1hNmEwNjM3NmJmY2QiLCAiYWlkIjogMCwgIm5ldCI6ICJ0Y3AiLCAidHlwZSI6ICJub25lIiwgImhvc3QiOiAiIiwgInBhdGgiOiAiIiwgInRscyI6ICIifQ==
-2023-05-28 17:58:52,694 - log.my_log - INFO - 邮件发送成功
-
-2023-05-29 01:58:54,224 - log.my_log - INFO - 配置结果: info: Stop the V2Ray service.
+2023-05-31 00:43:14,371 - log.my_log - INFO - 配置结果: 2023-05-30 16:43:03,325 - log.my_log - INFO - 开始自动安装V2Ray...
+2023-05-30 16:43:03,326 - log.my_log - INFO - 生成的uuid: 9d9529c7-c0b1-4f9f-b7b9-a24d720627f3
+2023-05-30 16:43:03,326 - log.my_log - INFO - 获取随机端口：
+2023-05-30 16:43:03,326 - log.my_log - INFO - 随机端口为: 15023
+2023-05-30 16:43:03,550 - log.my_log - INFO - 本机公网IP: 143.198.94.159
+info: Stop the V2Ray service.
 removed: /usr/local/bin/v2ray
 removed: /usr/local/share/v2ray
 removed: /etc/systemd/system/v2ray.service
@@ -165,10 +168,10 @@ info: V2Ray has been removed.
 info: If necessary, manually delete the configuration and log files.
 info: e.g., /usr/local/etc/v2ray and /var/log/v2ray/ ...
 
-info: Installing V2Ray v5.4.1 for x86_64
-Downloading V2Ray archive: https://github.com/v2fly/v2ray-core/releases/download/v5.4.1/v2ray-linux-64.zip
-Downloading verification file for V2Ray archive: https://github.com/v2fly/v2ray-core/releases/download/v5.4.1/v2ray-linux-64.zip.dgst
-info: Extract the V2Ray package to /tmp/tmp.IUcXF8FMhY and prepare it for installation.
+info: Installing V2Ray v5.5.0 for x86_64
+Downloading V2Ray archive: https://github.com/v2fly/v2ray-core/releases/download/v5.5.0/v2ray-linux-64.zip
+Downloading verification file for V2Ray archive: https://github.com/v2fly/v2ray-core/releases/download/v5.5.0/v2ray-linux-64.zip.dgst
+info: Extract the V2Ray package to /tmp/tmp.uyo5Uzh1c0 and prepare it for installation.
 info: Systemd service files have been installed successfully!
 warning: The following are the actual parameters for the v2ray service startup.
 warning: Please make sure the configuration file path is correctly set.
@@ -202,13 +205,22 @@ installed: /usr/local/share/v2ray/geoip.dat
 installed: /usr/local/share/v2ray/geosite.dat
 installed: /etc/systemd/system/v2ray.service
 installed: /etc/systemd/system/v2ray@.service
-removed: /tmp/tmp.IUcXF8FMhY
-info: V2Ray v5.4.1 is installed.
+removed: /tmp/tmp.uyo5Uzh1c0
+info: V2Ray v5.5.0 is installed.
 You may need to execute a command to remove dependent software: dnf remove curl unzip
 Please execute the command: systemctl enable v2ray; systemctl start v2ray
 
+2023-05-30 16:43:09,595 - log.my_log - INFO - stop v2ray
+2023-05-30 16:43:09,622 - log.my_log - INFO - 
+2023-05-30 16:43:09,622 - log.my_log - INFO - stop v2ray finished
+2023-05-30 16:43:09,622 - log.my_log - INFO - start v2ray
 start v2ray
 
 
 start v2ray finished
+2023-05-30 16:43:10,517 - log.my_log - INFO - start v2ray finished
+2023-05-30 16:43:10,519 - log.my_log - INFO - vmess_url: vmess://eyJ2IjogIjIiLCAicHMiOiAid2NnXzE0My4xOTguOTQuMTU5IiwgImFkZCI6ICIxNDMuMTk4Ljk0LjE1OSIsICJwb3J0IjogMTUwMjMsICJpZCI6ICI5ZDk1MjljNy1jMGIxLTRmOWYtYjdiOS1hMjRkNzIwNjI3ZjMiLCAiYWlkIjogMCwgIm5ldCI6ICJ0Y3AiLCAidHlwZSI6ICJub25lIiwgImhvc3QiOiAiIiwgInBhdGgiOiAiIiwgInRscyI6ICIifQ==
+2023-05-30 16:43:12,931 - log.my_log - INFO - 邮件发送成功
 
+2023-05-31 00:43:14,372 - log.my_log - INFO - 自动配置v2ray服务完成
+2023-05-31 00:43:14,372 - log.my_log - INFO - 获取到的vmess: vmess://eyJ2IjogIjIiLCAicHMiOiAid2NnXzE0My4xOTguOTQuMTU5IiwgImFkZCI6ICIxNDMuMTk4Ljk0LjE1OSIsICJwb3J0IjogMTUwMjMsICJpZCI6ICI5ZDk1MjljNy1jMGIxLTRmOWYtYjdiOS1hMjRkNzIwNjI3ZjMiLCAiYWlkIjogMCwgIm5ldCI6ICJ0Y3AiLCAidHlwZSI6ICJub25lIiwgImhvc3QiOiAiIiwgInBhdGgiOiAiIiwgInRscyI6ICIifQ==
