@@ -1,11 +1,9 @@
 # -*- coding:utf-8 -*-
+import json
 import re
-
-import distro
 import paramiko
-import platform
-from common import *
 from textbox_handler import TextboxHandler
+from v2ray_auto_client_log import logger
 
 
 class V2rayAutoClient:
@@ -209,7 +207,7 @@ class V2rayAutoClient:
         """
         logger.info("开始安装python依赖")
         linux_distribute = self.env["linux_distribute"]
-        install_command = "sudo pip install -r /home/git_dir/requirements.txt"
+        install_command = "sudo pip install -r /home/git_dir/v2ray_auto/requirements.txt"
         # if linux_distribute in ['ubuntu']:
         #     install_command = f"sudo pip3 install -r /home/{self.env.get('server_username')}/git_dir/v2ray_auto/requirements.txt"
         logger.info(f"安装python依赖命令: {install_command}")
