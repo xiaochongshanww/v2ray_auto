@@ -1,15 +1,26 @@
+import logging
+import queue
 import sys
 import ipaddress
+import threading
+
+from PyQt5.QtCore import QTimer, QMetaObject, Q_ARG, Qt, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QTextEdit, QComboBox, QMessageBox
-from PyQt5.QtGui import QCursor
+from PyQt5.QtGui import QCursor, QGuiApplication
 from v2ray_auto_client import V2rayAutoClient
 
 
 class MyWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.queue = queue.Queue()
+        # 初始化定时器，设置回调并启动
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_textbox)
+        self.timer.start(100)  # 每100ms检查一次
+
         self.setWindowTitle("v2ray_auto_client")
-        self.setGeometry(200, 200, 400, 380)
+        self.setGeometry(200, 200, 400, 420)
 
         self.ip_label = QLabel("服务器IP地址:", self)
         self.ip_label.move(20, 20)
@@ -51,6 +62,21 @@ class MyWindow(QWidget):
         self.output_textbox = QTextEdit(self)
         self.output_textbox.setGeometry(20, 260, 360, 100)
 
+        self.vmess_textbox = QLineEdit(self)  # 添加一个新的 QLineEdit 用来显示 vmess URL
+        self.vmess_textbox.setGeometry(20, 380, 260, 20)
+
+        self.copy_button = QPushButton("复制", self)  # 添加一个新的 QPushButton，点击此按钮将复制 vmess URL
+        self.copy_button.setGeometry(300, 380, 60, 20)
+        self.copy_button.clicked.connect(self.on_copy)
+
+    def textbox_callback(self, log_entry):
+        self.queue.put(log_entry)
+
+    def update_textbox(self):
+        while not self.queue.empty():
+            log_entry = self.queue.get()
+            self.output_textbox.append(log_entry)
+
     def on_confirm(self):
         params = self.get_params()
         if not self.check_params(params):
@@ -58,14 +84,27 @@ class MyWindow(QWidget):
 
         self.set_loading_state(True)  # 将按钮设置为加载状态
 
-        try:
-            v2ray_auto_client = V2rayAutoClient(params)
-            vmess = v2ray_auto_client.run()
-            self.output_textbox.append(vmess)
-        except Exception as e:
-            QMessageBox.critical(self, "异常", f"程序执行过程中出现异常：\n{str(e)}")
-        finally:
-            self.set_loading_state(False)  # 恢复按钮状态
+        def worker():
+            try:
+                v2ray_auto_client = V2rayAutoClient(params, textbox_callback=self.textbox_callback)
+                vmess = v2ray_auto_client.run()
+                QMetaObject.invokeMethod(self.output_textbox, "append", Qt.QueuedConnection, Q_ARG(str, vmess))
+                QMetaObject.invokeMethod(self.vmess_textbox, "setText", Qt.QueuedConnection, Q_ARG(str, vmess))
+            except Exception as e:
+                QMetaObject.invokeMethod(self, "show_error_message", Qt.QueuedConnection, Q_ARG(str, str(e)))
+                # QMessageBox.critical(self, "异常", f"程序执行过程中出现异常：\n{str(e)}")
+            finally:
+                QMetaObject.invokeMethod(self, "set_loading_state", Qt.QueuedConnection, Q_ARG(bool, False))
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+
+    def on_copy(self):
+        """
+        复制 vmess URL 到剪贴板
+        """
+        clipboard = QGuiApplication.clipboard()
+        clipboard.setText(self.vmess_textbox.text())
 
     def get_params(self):
         """
@@ -164,6 +203,7 @@ class MyWindow(QWidget):
         except ValueError:
             return False
 
+    @pyqtSlot(bool)
     def set_loading_state(self, loading):
         """
         设置按钮加载状态
@@ -178,6 +218,10 @@ class MyWindow(QWidget):
             self.confirm_button.setText("确认")
             self.confirm_button.setEnabled(True)
             QApplication.processEvents()  # 更新界面
+
+    @pyqtSlot(str)
+    def show_error_message(self, message):
+        QMessageBox.critical(self, "异常", f"程序执行过程中出现异常：\n{message}")
 
 
 if __name__ == "__main__":
