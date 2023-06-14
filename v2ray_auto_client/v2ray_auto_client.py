@@ -100,7 +100,7 @@ class V2rayAutoClient:
         error = stderr.read().decode('utf-8')
         logger.info(f"[{server_ip}: {server_port}]: {command}\n{output}")
         if error:
-            logger.info(f"[{server_ip}: {server_port}]:\nCommand error: {error}")
+            logger.info(f"[{server_ip}: {server_port}]:\nstderr: {error}")
         return output
 
     def get_linux_distro(self):
@@ -194,11 +194,20 @@ class V2rayAutoClient:
         linux_distribute = self.env["linux_distribute"]
         self.execute_command("sudo rm -rf /home/git_dir/")
         self.execute_command("sudo mkdir -p /home/git_dir")
-        clone_command = "git clone https://github.com/wcg14231022/v2ray_auto.git /home/git_dir/v2ray_auto"
-        # if linux_distribute in ['ubuntu']:
-        #     clone_command = f"git clone https://github.com/wcg14231022/v2ray_auto.git /home/{self.env.get('server_username')}/git_dir/v2ray_auto"
+        clone_command = self.get_clone_v2ray_code_command()
         self.execute_command(clone_command)
         logger.info("克隆v2ray-auto代码完成")
+
+    def get_clone_v2ray_code_command(self):
+        """
+        获取克隆v2ray代码命令
+        :return:
+        """
+        clone_command = "git clone https://github.com/wcg14231022/v2ray_auto.git /home/git_dir/v2ray_auto"
+        if re.search(r"azure ubuntu", self.params.get("os"), re.I):
+            clone_command = f"git clone https://github.com/wcg14231022/v2ray_auto.git /home" \
+                            f"/{self.env.get('server_username')}/git_dir/v2ray_auto"
+        return clone_command
 
     def install_python_requirements(self):
         """
@@ -206,13 +215,21 @@ class V2rayAutoClient:
         :return:
         """
         logger.info("开始安装python依赖")
-        linux_distribute = self.env["linux_distribute"]
-        install_command = "sudo pip install -r /home/git_dir/v2ray_auto/requirements.txt"
-        # if linux_distribute in ['ubuntu']:
-        #     install_command = f"sudo pip3 install -r /home/{self.env.get('server_username')}/git_dir/v2ray_auto/requirements.txt"
+        install_command = self.get_install_python_requirements_command()
         logger.info(f"安装python依赖命令: {install_command}")
         self.execute_command(install_command)
         logger.info("安装python依赖完成")
+
+    def get_install_python_requirements_command(self):
+        """
+        获取安装python依赖命令
+        :return:
+        """
+        install_command = "sudo pip install -r /home/git_dir/v2ray_auto/requirements.txt"
+        if re.search(r"azure ubuntu", self.params.get("os"), re.I):
+            install_command = f"sudo pip3 install -r /home/{self.env.get('server_username')}/" \
+                              f"git_dir/v2ray_auto/requirements.txt"
+        return install_command
 
     def auto_config_v2ray_service(self):
         """
@@ -220,15 +237,47 @@ class V2rayAutoClient:
         :return:
         """
         logger.info("开始自动配置v2ray服务")
-        linux_distribute = self.env["linux_distribute"]
-        config_command = "cd /home/git_dir/v2ray_auto && sudo python3 /home/git_dir/v2ray_auto/auto_install_v2ray.py"
-        # if linux_distribute in ['ubuntu']:
-        #     config_command = f"cd /home/{self.env.get('server_username')}/git_dir/v2ray_auto && sudo python3 " \
-        #                      f"/home/{self.env.get('server_username')}/git_dir/v2ray_auto/auto_install_v2ray.py"
+        config_command = self.get_auto_config_v2ray_service_command()
         logger.info(f"配置命令: {config_command}")
         rs = self.execute_command(config_command)
         logger.info(f"配置结果: {rs}")
+        self.open_fire_wall_for_v2ray(rs)
         vmess = re.findall(r"vmess_url:\s*(\S+)\n", rs, re.I | re.M)[0]
         logger.info("自动配置v2ray服务完成")
         logger.info(f"获取到的vmess: {vmess}")
         return vmess
+
+    def open_fire_wall_for_v2ray(self, rs):
+        """
+        打开防火墙
+        :param rs: v2ray配置结果
+        :return:
+        """
+        port = self.get_v2ray_port(rs)
+        self.execute_command(f"sudo iptables -A INPUT -p tcp --dport {port} -j ACCEPT")
+        self.execute_command(f"sudo iptables -A INPUT -p udp --dport {port} -j ACCEPT")
+        self.execute_command(f"sudo firewall-cmd --permanent --zone=public --add-port={port}/tcp")
+        self.execute_command(f"sudo firewall-cmd --permanent --zone=public --add-port={port}/udp")
+        self.execute_command(f"sudo firewall-cmd --reload")
+
+    @staticmethod
+    def get_v2ray_port(rs):
+        """
+        获取v2ray端口
+        :param rs:
+        :return:
+        """
+        port = re.findall(r"随机端口为:\s*(\d+)\n", rs, re.I | re.M)[0]
+        logger.info(f"获取到的v2ray端口: {port}")
+        return port
+
+    def get_auto_config_v2ray_service_command(self):
+        """
+        获取自动配置v2ray服务命令
+        :return:
+        """
+        config_command = "cd /home/git_dir/v2ray_auto && sudo python3 /home/git_dir/v2ray_auto/auto_install_v2ray.py"
+        if re.search(r"azure ubuntu", self.params.get("os"), re.I):
+            config_command = f"cd /home/{self.env.get('server_username')}/git_dir/v2ray_auto && sudo python3 " \
+                             f"/home/{self.env.get('server_username')}/git_dir/v2ray_auto/auto_install_v2ray.py"
+        return config_command

@@ -1,4 +1,3 @@
-import logging
 import queue
 import sys
 import ipaddress
@@ -92,7 +91,6 @@ class MyWindow(QWidget):
                 QMetaObject.invokeMethod(self.vmess_textbox, "setText", Qt.QueuedConnection, Q_ARG(str, vmess))
             except Exception as e:
                 QMetaObject.invokeMethod(self, "show_error_message", Qt.QueuedConnection, Q_ARG(str, str(e)))
-                # QMessageBox.critical(self, "异常", f"程序执行过程中出现异常：\n{str(e)}")
             finally:
                 QMetaObject.invokeMethod(self, "set_loading_state", Qt.QueuedConnection, Q_ARG(bool, False))
 
