@@ -53,14 +53,22 @@ class MyV2Ray:
     @staticmethod
     def auto_install():
         logger.info("install v2ray")
-        result = subprocess.Popen("systemctl daemon-reload", shell=True, stdout=subprocess.PIPE)
-        logger.info(result.stdout.read().decode('utf-8'))
-        result = subprocess.Popen("sudo su root", shell=True, stdout=subprocess.PIPE)
-        logger.info(result.stdout.read().decode('utf-8'))
-        result = subprocess.Popen(['bash', '-c',
-                                   'curl -s -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh | bash'],
-                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-        logger.info(result.stdout.read().decode('utf-8'))
+        
+        # 重新加载 systemd 配置
+        result = subprocess.run(['sudo', 'systemctl', 'daemon-reload'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info("Systemd manager configuration reloaded successfully")
+        else:
+            logger.error(f"Failed to reload systemd manager configuration: {result.stderr.decode('utf-8')}")
+        
+        # 安装 V2Ray
+        command = 'curl -s -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh | sudo bash'
+        result = subprocess.run(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info("V2Ray installed successfully")
+        else:
+            logger.error(f"Failed to install V2Ray: {result.stderr.decode('utf-8')}")
+        
         logger.info("install v2ray finished")
 
     @staticmethod
