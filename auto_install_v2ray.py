@@ -1,4 +1,5 @@
 from common import *
+import argparse
 
 
 class MyV2Ray:
@@ -50,18 +51,25 @@ class MyV2Ray:
 
     @staticmethod
     def auto_install():
+        logger.info("install v2ray")
         result = subprocess.Popen("systemctl daemon-reload", shell=True, stdout=subprocess.PIPE)
+        logger.info(result.stdout.read().decode('utf-8'))
+        result = subprocess.Popen("sudo su root", shell=True, stdout=subprocess.PIPE)
+        logger.info(result.stdout.read().decode('utf-8'))
         result = subprocess.Popen(['bash', '-c',
                                    'curl -s -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh | bash'],
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-        print(result.stdout.read().decode('utf-8'))
+        logger.info(result.stdout.read().decode('utf-8'))
+        logger.info("install v2ray finished")
 
     @staticmethod
     def auto_uninstall():
+        logger.info("uninstall v2ray")
         result = subprocess.Popen(['bash', '-c',
-                                   'bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh) --remove'],
+                       'echo y | bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh) --remove'],
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-        print(result.stdout.read().decode('utf-8'))
+        logger.info(result.stdout.read().decode('utf-8'))
+        logger.info("uninstall v2ray finished")
 
     @staticmethod
     def start_v2ray():
@@ -71,12 +79,10 @@ class MyV2Ray:
         :return:
         """
         logger.info("start v2ray")
-        print("start v2ray")
         result = subprocess.Popen("systemctl enable v2ray", shell=True, stdout=subprocess.PIPE)
-        print(result.stdout.read().decode('utf-8'))
+        logger.info(result.stdout.read().decode('utf-8'))
         result = subprocess.Popen("systemctl start v2ray", shell=True, stdout=subprocess.PIPE)
-        print(result.stdout.read().decode('utf-8'))
-        print("start v2ray finished")
+        logger.info(result.stdout.read().decode('utf-8'))
         logger.info("start v2ray finished")
 
     @staticmethod
@@ -199,6 +205,7 @@ class MyV2Ray:
         from email.mime.text import MIMEText
         from email.header import Header
 
+        
         # 邮件发送方地址
         sender = 'wcg14231022@gmail.com'
         # 邮件接收方地址
@@ -257,6 +264,10 @@ class MyV2Ray:
 
 
 if __name__ == "__main__":
+    # 接收命令行参数
+    parser = argparse.ArgumentParser(description="Manage V2Ray installation")
+    parser.add_argument('--email', type=str, required=True, help="Email address to send the VMess URL")
+
     my = MyV2Ray()
     my.auto_uninstall()
     my.auto_install()
