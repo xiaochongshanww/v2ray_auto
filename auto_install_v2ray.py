@@ -8,6 +8,7 @@ class MyV2Ray:
         self.server_config = dict()  # 服务端配置
         self.client_config = dict()  # 客户端配置
         self.client_config_vmess_url = ""  # 客户端配置生成的vmess url
+        self.email_receiver = "327306310@qq.com"
 
         self.init()
 
@@ -208,8 +209,6 @@ class MyV2Ray:
         
         # 邮件发送方地址
         sender = 'wcg14231022@gmail.com'
-        # 邮件接收方地址
-        receiver = '327306310@qq.com'
         # SMTP服务器地址
         smtp_server = 'smtp.gmail.com'
         # SMTP服务器端口号
@@ -226,12 +225,13 @@ class MyV2Ray:
         message['Subject'] = Header('vmess url update', 'utf-8')
 
         # 发送邮件
+        logger.info(f"将vmess url发送至邮箱: {self.email_receiver}")
         try:
             # 连接SMTP服务器
             smtpObj = smtplib.SMTP(smtp_server, smtp_port)
             smtpObj.starttls()  # 开启TLS加密
             smtpObj.login(username, password)  # 登录邮箱账号
-            smtpObj.sendmail(sender, receiver, message.as_string())  # 发送邮件
+            smtpObj.sendmail(sender, self.email_receiver, message.as_string())  # 发送邮件
             logger.info("邮件发送成功")
         except smtplib.SMTPException:
             logger.error("无法发送邮件")
@@ -269,6 +269,7 @@ if __name__ == "__main__":
     parser.add_argument('--email', type=str, required=True, help="Email address to send the VMess URL")
 
     my = MyV2Ray()
+    my.email_receiver = parser.parse_args().email
     my.auto_uninstall()
     my.auto_install()
     my.apply_server_config()
