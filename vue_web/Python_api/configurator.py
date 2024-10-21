@@ -1,3 +1,6 @@
+import gevent
+gevent.monkey.patch_all()
+
 import time
 import paramiko
 import json
@@ -78,8 +81,11 @@ class Configurator:
         :return:
         """
         logger.info("开始切换到root用户")
-        self.execute_command(
-            f"echo {self.env.get('server_password')} | sudo -S su")
+        try:
+            self.execute_command(
+                f"echo {self.env.get('server_password')} | sudo -S su")
+        except Exception as e:
+            logger.error(f"切换到root用户失败: {e}")
         logger.info("切换到root用户完成")
 
     def server_update(self):
@@ -141,14 +147,16 @@ class Configurator:
         server_ip = self.env["server_ip"]
         server_port = self.env["server_port"]
         logger.info(f"正在执行命令: {command}")
-        # self.socketio.emit('process_update', {'message': f"正在执行命令: {command}\n"})
         stdin, stdout, stderr = self.ssh_client.exec_command(command)
 
         full_output = ""
         full_error = ""
 
         # 实时读取标准输出和标准错误
+        loop_count = 0
         while not stdout.channel.exit_status_ready():
+            # logger.info(f"第{loop_count}次读取输出")
+            loop_count += 1 
             if stdout.channel.recv_ready():
                 output = stdout.channel.recv(1024).decode('utf-8')
                 full_output += output
@@ -158,6 +166,8 @@ class Configurator:
                 error = stderr.channel.recv_stderr(1024).decode('utf-8')
                 full_error += error
                 self.socketio.emit('process_update', {'message': error})
+            
+            gevent.sleep(0)
 
         # 捕获命令完成后剩余的输出
         output = stdout.read().decode('utf-8')
