@@ -75,7 +75,16 @@ export default {
     };
   },
   mounted() {
-    this.socket = io("http://127.0.0.1:5000");
+    this.socket = io("http://127.0.0.1:5000/", {
+    // path: '/socket.io/',
+    transports: ['websocket'],
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000,
+    autoConnect: true,
+    debug: true
+    });
   },
   methods: {
     configureServer() {
@@ -83,7 +92,7 @@ export default {
       this.resultOutput = "";
 
       // Use fetch to send a POST request to the server
-      fetch("http://127.0.0.1:5000/configure", {
+      fetch("http://127.0.0.1:5000/api/configure", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
