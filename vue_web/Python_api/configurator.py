@@ -153,10 +153,7 @@ class Configurator:
         full_error = ""
 
         # 实时读取标准输出和标准错误
-        loop_count = 0
         while not stdout.channel.exit_status_ready():
-            # logger.info(f"第{loop_count}次读取输出")
-            loop_count += 1 
             if stdout.channel.recv_ready():
                 output = stdout.channel.recv(1024).decode('utf-8')
                 full_output += output
