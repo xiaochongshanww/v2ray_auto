@@ -469,7 +469,6 @@ class Configurator:
     def get_auto_config_v2ray_service_command(self):
         """
         获取自动配置v2ray服务命令
-        :return:
         """
         config_command = "cd /home/git_dir/v2ray_auto && python3 /home/git_dir/v2ray_auto/auto_install_v2ray.py"
         if re.search(r"azure ubuntu", self.params.get("os"), re.I):
