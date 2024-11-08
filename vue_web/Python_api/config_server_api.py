@@ -10,7 +10,7 @@ import time
 
 app = Flask(__name__)
 CORS(app)  # 启用 CORS
-socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)  # 创建 SocketIO 对象
+socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True,  async_mode='gevent')  # 创建 SocketIO 对象
 
 
 @app.route('/api/configure', methods=['POST'])
