@@ -1,6 +1,7 @@
 import logging
 import os.path
 import sys
+import colorlog
 from logging.handlers import TimedRotatingFileHandler
 
 # 创建全局日志器
@@ -10,6 +11,24 @@ logger.setLevel(logging.DEBUG)
 # 创建控制台处理器
 console_handler = logging.StreamHandler(sys.stdout)  # 日志记录到标准输出
 console_handler.setLevel(logging.DEBUG)
+
+# 定义日志格式和颜色
+log_colors = {
+    'DEBUG': 'cyan',
+    'INFO': 'green',
+    'WARNING': 'yellow',
+    'ERROR': 'red',
+    'CRITICAL': 'bold_red',
+}
+
+console_color_formatter = colorlog.ColoredFormatter(
+    '%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    log_colors=log_colors
+)
+console_handler.setFormatter(console_color_formatter)
+
+# 将处理器添加到日志器
+logger.addHandler(console_handler)
 
 # 定义日志格式
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

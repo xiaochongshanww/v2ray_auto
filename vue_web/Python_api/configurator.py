@@ -1,5 +1,5 @@
-import gevent
-gevent.monkey.patch_all()
+# import gevent
+# gevent.monkey.patch_all()
 
 import time
 import paramiko
@@ -117,8 +117,8 @@ class Configurator:
         添加交换分区
         :return:
         """
-        if int(self.get_available_memory()) > 50:
-            logger.info("服务器可用内存大于50M，暂不添加交换分区")
+        if int(self.get_available_memory()) > 100:
+            logger.info("服务器可用内存大于100M，暂不添加交换分区")
             return
         logger.info("开始添加交换分区")
         self.execute_command(
@@ -138,11 +138,37 @@ class Configurator:
         output = self.execute_command(command)
         return output
 
-    def execute_command(self, command):
+    def execute_command(self, command, retries=5, delay=10):
         """
         执行命令并实时获取输出
         :param command: 要执行的命令
         :return: 命令的标准输出
+        """
+        for attempt in range(retries):
+            try:
+                cmd_output = self.exceute_command_basic(command)
+                if self.cmd_output_has_dpkg_lock(cmd_output):
+                    logger.info(f"dpkg锁定，等待{delay}秒后重试")
+                    self.release_dpkg_lock(cmd_output)
+                    time.sleep(delay)
+                    logger.info(f"重新下发命令: {command}")
+                    continue
+                if self.dpkg_interrupted(cmd_output):
+                    logger.info(f"dpkg被中断，尝试修复dpkg状态")
+                    self.repair_dpkg()
+                    continue
+                break
+            except Exception as e:
+                logger.error(f"执行命令失败: {e}")
+                time.sleep(delay)
+
+        return cmd_output
+
+    def exceute_command_basic(self, command):
+        """
+        命令行执行的基本方法，只负责下发命令，读取回显
+        :param command:
+        :return:
         """
         server_ip = self.env["server_ip"]
         server_port = self.env["server_port"]
@@ -151,7 +177,6 @@ class Configurator:
 
         full_output = ""
         full_error = ""
-
         # 实时读取标准输出和标准错误
         while not stdout.channel.exit_status_ready():
             if stdout.channel.recv_ready():
@@ -160,12 +185,12 @@ class Configurator:
                 self.socketio.emit('process_update', {'message': output})
 
             if stderr.channel.recv_stderr_ready():
-                error = stderr.channel.recv_stderr(1024).decode('utf-8')
+                error = stderr.channel.recv_stderr(
+                    1024).decode('utf-8')
                 full_error += error
                 self.socketio.emit('process_update', {'message': error})
-            
-            gevent.sleep(0)
 
+            # gevent.sleep(0)
         # 捕获命令完成后剩余的输出
         output = stdout.read().decode('utf-8')
         error = stderr.read().decode('utf-8')
@@ -178,11 +203,58 @@ class Configurator:
 
         if full_output:
             logger.info(f"[{server_ip}: {server_port}]: {full_output}")
-        if full_error:
-            logger.error(f"[{server_ip}: {server_port}]: {full_error}")
+            return full_output
+        logger.error(f"[{server_ip}: {server_port}]: {full_error}")
+        return full_error
+        
+    
+    def cmd_output_has_dpkg_lock(self, cmd_output):
+        """
+        检查命令输出是否包含dpkg锁
+        :return:
+        """
+        return "dpkg" in cmd_output and "lock" in cmd_output
+    
+    def dpkg_interrupted(self, cmd_output):
+        """
+        检查dpkg是否被中断
+        :return:
+        """
+        return "dpkg" in cmd_output and "interrupted" in cmd_output
+    
+    def repair_dpkg(self):
+        """
+        修复dpkg
+        :return:
+        """
+        self.exceute_command_basic("sudo dpkg --configure -a")
 
-        return full_output
+    def release_dpkg_lock(self, cmd_output):
+        """
+        释放dpkg锁
+        :return:
+        """
+        logger.info("释放dpkg锁")
+        process_id = self.get_dpkg_held_process_from_output(cmd_output)
+        if not process_id:
+            logger.error("释放dpkg锁失败")
+            return
+        self.exceute_command_basic(f"sudo kill -9 {process_id}")
+        self.exceute_command_basic(f"sudo dpkg --configure -a")
 
+    def get_dpkg_held_process_from_output(self, cmd_output):
+        """
+        获取dpkg锁定的进程
+        :return:
+        """
+        logger.info("获取dpkg锁定的进程")
+        try:
+            process_id = re.findall(r"held by process (\d+)", cmd_output)[0]
+        except IndexError:
+            logger.error("无法获取dpkg锁定的进程")
+            process_id = None
+        return process_id
+    
     def get_linux_distro(self):
         """
         判断Linux操作系统类型
@@ -320,11 +392,12 @@ class Configurator:
         linux_distribute = self.env["linux_distribute"]
         self.execute_command(f"sudo rm -rf {self.get_git_dir_path()}")
         self.execute_command(f"sudo mkdir -p {self.get_git_dir_path()}")
-        self.execute_command(f"sudo chown -R $(whoami):$(whoami) {self.get_git_dir_path()}")
+        self.execute_command(
+            f"sudo chown -R $(whoami):$(whoami) {self.get_git_dir_path()}")
         clone_command = self.get_clone_v2ray_code_command()
         self.execute_command(clone_command)
         logger.info("克隆v2ray-auto代码完成")
-        
+
     def get_git_dir_path(self):
         """
         获取git目录路径
@@ -472,7 +545,8 @@ class Configurator:
         """
         config_command = "cd /home/git_dir/v2ray_auto && python3 /home/git_dir/v2ray_auto/auto_install_v2ray.py"
         if re.search(r"azure ubuntu", self.params.get("os"), re.I):
-            venv_python = os.path.join(self.env.get("venv_path"), "bin", "python3")
+            venv_python = os.path.join(
+                self.env.get("venv_path"), "bin", "python3")
             config_command = f"cd /home/{self.env.get('server_username')}/git_dir/v2ray_auto && {self.get_active_venev_command(
             )} && sudo {venv_python} /home/{self.env.get('server_username')}/git_dir/v2ray_auto/auto_install_v2ray.py --email {self.params.get('email')}"
         return config_command
