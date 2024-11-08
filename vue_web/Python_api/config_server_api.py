@@ -1,5 +1,5 @@
-# import gevent.monkey
-# gevent.monkey.patch_all()
+import gevent.monkey
+gevent.monkey.patch_all()
 
 from flask import Flask, request
 from flask_socketio import SocketIO, emit

@@ -1,5 +1,5 @@
-# import gevent
-# gevent.monkey.patch_all()
+import gevent
+gevent.monkey.patch_all()
 
 import time
 import paramiko
@@ -190,7 +190,7 @@ class Configurator:
                 full_error += error
                 self.socketio.emit('process_update', {'message': error})
 
-            # gevent.sleep(0)
+            gevent.sleep(0)
         # 捕获命令完成后剩余的输出
         output = stdout.read().decode('utf-8')
         error = stderr.read().decode('utf-8')
