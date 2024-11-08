@@ -60,7 +60,10 @@ socketio_handler.setFormatter(formatter)
 logger.addHandler(socketio_handler)
 
 # 创建文件处理器，按时间分割日志文件
-log_file_path = os.path.join(os.path.dirname(__file__), 'config_server.log')
+log_file_dir = os.path.join(os.path.dirname(__file__), 'logs')
+if not os.path.exists(log_file_dir):
+    os.makedirs(log_file_dir)
+log_file_path = os.path.join(log_file_dir, 'config_server.log')
 file_handler = TimedRotatingFileHandler(log_file_path, when='midnight', interval=1, backupCount=7)
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
