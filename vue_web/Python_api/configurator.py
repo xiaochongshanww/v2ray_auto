@@ -1,5 +1,5 @@
 import gevent
-gevent.monkey.patch_all()
+# gevent.monkey.patch_all()
 
 import time
 import paramiko
@@ -8,6 +8,7 @@ import re
 import os
 from flask_socketio import SocketIO
 from config_server_api_logger import logger
+from config_server_public import ConfigServerPublic
 
 
 class Configurator:
@@ -172,9 +173,16 @@ class Configurator:
         """
         server_ip = self.env["server_ip"]
         server_port = self.env["server_port"]
-        logger.info(f"正在执行命令: {command}")
-        stdin, stdout, stderr = self.ssh_client.exec_command(command)
+        # logger.info(f"正在执行命令: {command}")
+        # stdin, stdout, stderr = self.ssh_client.exec_command(command)
 
+        cmd_para_dict = {"server_ip": server_ip,
+                         "server_port": server_port,
+                         "ssh_client": self.ssh_client,
+                         "socketio": self.socketio}
+        return ConfigServerPublic.exceute_command_basic_public(command, **cmd_para_dict)
+        
+        
         full_output = ""
         full_error = ""
         # 实时读取标准输出和标准错误

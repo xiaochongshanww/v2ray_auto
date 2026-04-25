@@ -21,3 +21,7 @@ Thumbs.db
 # 忽略其他不需要的文件和目录
 *.swp
 *.swo
+vue_web/Python_api/config_server.log*
+vue_web/Python_api/logs/config_server.log.*
+.idea/
+.idea/v2ray_auto.iml

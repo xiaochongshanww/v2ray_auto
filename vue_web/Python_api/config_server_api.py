@@ -5,6 +5,7 @@ from flask import Flask, request
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from configurator import Configurator
+from warp_configurator import Warp_Configurator
 from config_server_api_logger import logger
 import time
 
@@ -29,13 +30,15 @@ def configure():
                          "server_username": username,
                          "server_password": password,
                          "email": email,
-                         "os": os_type}
+                         "os": "Azure Ubuntu"}  # 配置方法基本统一了，先写死系统类型
 
         configurator = Configurator(config_params, socketio)  # 创建配置器对象
         result = configurator.run()
+        warp_configurator = Warp_Configurator(configurator)
+        warp_configurator.run()
 
-        socketio.emit('configuration_complete', {'result': result})
-        return {'result': result}
+        # socketio.emit('configuration_complete', {'result': result})
+        # return {'result': result}
     except Exception as e:
         return {'error': str(e)}
     
