@@ -8,7 +8,28 @@ This branch is a destructive rewrite of the original project.
 
 ## Project goal
 
-The project goal is one-click deployment on a nearly empty VPS. The deployment flow must be able to bootstrap the target machine, install the managed V2Ray service, write config, restart the service, open the port, and return a generated connection URL.
+The project goal is one-click deployment on a nearly empty VPS. The deployment flow must be able to bootstrap the target machine, install the managed core service, write an optimized config, apply basic network tuning, restart the service, open the port, and return a generated client URI.
+
+## Default profile
+
+The default deployment profile is now:
+
+```text
+Xray-core + VLESS + REALITY + Vision + 443
+```
+
+Default behavior:
+
+```text
+core = xray
+profile = vless-reality-vision
+service = xray.service
+config = /usr/local/etc/xray/config.json
+port = 443
+mux = false
+```
+
+Legacy VMess TCP is kept as a compatibility profile, but it is no longer the default.
 
 ## What changed
 
@@ -17,6 +38,8 @@ The project goal is one-click deployment on a nearly empty VPS. The deployment f
 - Legacy `config.py` no longer stores credentials.
 - Core logic moved to `v2ray_auto/core/`.
 - Empty-server bootstrap logic moved to `v2ray_auto/core/installer.py`.
+- Config generation moved to `v2ray_auto/core/profiles/`.
+- Basic BBR network tuning moved to `v2ray_auto/core/network_tuning.py`.
 - HTTP entrypoint moved to `v2ray_auto/api/app.py`.
 - Old `vue_web/Python_api/config_server_api.py` is now a compatibility wrapper.
 - Legacy environment-dependent tests were replaced with pure function tests.
@@ -63,8 +86,22 @@ Payload example:
   "host": "203.0.113.10",
   "serverPort": 22,
   "username": "root",
-  "password": "<ssh password>"
+  "password": "<ssh password>",
+  "profile": "vless-reality-vision",
+  "listenPort": 443,
+  "realityServerName": "www.microsoft.com",
+  "realityDest": "www.microsoft.com:443"
 }
+```
+
+Response fields include:
+
+```text
+clientUri
+core
+profile
+serviceName
+remoteConfigPath
 ```
 
 ## Deployment flow
@@ -73,15 +110,18 @@ The refactored service is still designed for one-click deployment on an empty se
 
 1. Connect to the server with SSH.
 2. Detect the Linux distribution.
-3. Install basic packages such as curl and certificates.
-4. Add a small swap file when memory is too low and no swap exists.
-5. Install V2Ray service when `v2ray.service` is missing.
-6. Generate a new server config.
-7. Back up the existing config file if present.
-8. Upload the new config.
-9. Restart the managed service.
-10. Open the generated TCP port in common local firewall tools when available.
-11. Return a generated connection URL.
+3. Select core by profile. Default is Xray.
+4. Install basic packages such as curl and certificates.
+5. Add a small swap file when memory is too low and no swap exists.
+6. Install Xray service when `xray.service` is missing.
+7. Enable BBR when available and not already active.
+8. Generate REALITY key pair for the default profile.
+9. Generate a new server config.
+10. Back up the existing config file if present.
+11. Upload the new config.
+12. Restart the managed service.
+13. Open the generated TCP port in common local firewall tools when available.
+14. Return a generated client URI.
 
 ## Tests
 
@@ -94,4 +134,6 @@ python -m pytest
 - Clean sensitive values from Git history.
 - Rewrite the Vue frontend to call `/api/deploy` with `X-API-Key`.
 - Decide whether to keep or remove the PyQt client.
+- Finish full legacy VMess client URI generation.
 - Add more installer tests and failure recovery for partially bootstrapped servers.
+- Add config hash comparison to skip unnecessary restarts.
