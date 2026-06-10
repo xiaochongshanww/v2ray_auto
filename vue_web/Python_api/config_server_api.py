@@ -1,52 +1,5 @@
-import gevent.monkey
-gevent.monkey.patch_all()
+"""Compatibility wrapper for the refactored API."""
 
-from flask import Flask, request
-from flask_socketio import SocketIO, emit
-from flask_cors import CORS
-from configurator import Configurator
-from warp_configurator import Warp_Configurator
-from config_server_api_logger import logger
-import time
+from v2ray_auto.api.app import app, socketio
 
-app = Flask(__name__)
-CORS(app)  # 启用 CORS
-socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True,  async_mode='gevent')  # 创建 SocketIO 对象
-
-
-@app.route('/api/configure', methods=['POST'])
-def configure():
-    try:
-        data = request.json
-        server_ip = data.get('serverIp')
-        server_port = data.get('serverPort')
-        username = data.get('username')
-        password = data.get('password')
-        email = data.get('email')
-        os_type = data.get('os')
-
-        config_params = {"server_ip": server_ip,
-                         "server_port": server_port,
-                         "server_username": username,
-                         "server_password": password,
-                         "email": email,
-                         "os": "Azure Ubuntu"}  # 配置方法基本统一了，先写死系统类型
-
-        configurator = Configurator(config_params, socketio)  # 创建配置器对象
-        result = configurator.run()
-        warp_configurator = Warp_Configurator(configurator)
-        warp_configurator.run()
-
-        # socketio.emit('configuration_complete', {'result': result})
-        # return {'result': result}
-    except Exception as e:
-        return {'error': str(e)}
-    
-@socketio.on('connect')
-def handle_connect():
-    logger.info('客户端已连接到socket.io服务器')
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    logger.info('客户端已断开socket.io服务器')
-
+__all__ = ["app", "socketio"]
