@@ -1,15 +1,10 @@
-"""Deployment orchestration.
-
-This module intentionally avoids downloading and executing third-party installer
-scripts. It expects the target server to already provide a v2ray systemd service,
-or to be prepared by a separate installer plugin in a later change.
-"""
+"""Deployment orchestration for one-click setup on empty servers."""
 
 from __future__ import annotations
 
 import json
-from typing import Callable
 
+from .installer import Installer
 from .models import DeploymentRequest, DeploymentResult, LogSink
 from .os_release import parse_os_release
 from .settings import Settings
@@ -34,6 +29,8 @@ class DeploymentService:
         with SSHExecutor(request, log=capture, timeout=self.settings.command_timeout) as ssh:
             distro_id, family = self._detect_os(ssh)
             capture(f"detected linux distribution: {distro_id} ({family})")
+
+            Installer(ssh, log=capture).ensure_installed(family)
 
             vmess = build_vmess_config(request.host)
             remote_config_path = self._resolve_config_path(ssh)
@@ -82,7 +79,7 @@ class DeploymentService:
         ssh.run("systemctl daemon-reload", sudo=True)
         result = ssh.run("systemctl list-unit-files | grep -E '^v2ray\\.service'", sudo=True, check=False)
         if not result.stdout.strip():
-            raise RuntimeError("v2ray.service was not found on target server; install v2ray before running deployment")
+            raise RuntimeError("v2ray.service was not found after bootstrap install")
         ssh.run("systemctl enable v2ray", sudo=True)
         ssh.run("systemctl restart v2ray", sudo=True)
         ssh.run("systemctl is-active v2ray", sudo=True)
