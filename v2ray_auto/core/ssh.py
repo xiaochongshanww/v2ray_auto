@@ -6,6 +6,7 @@ multiple places. This module is the single low-level remote execution boundary.
 
 from __future__ import annotations
 
+import shlex
 import socket
 import time
 from dataclasses import dataclass
@@ -74,8 +75,8 @@ class SSHExecutor:
         sent_command = command
         display_command = self._redact(command, redact)
         if sudo:
-            sent_command = f"sudo -S -p '' {command}"
-            display_command = f"sudo {display_command}"
+            sent_command = f"sudo -S -p '' sh -lc {shlex.quote(command)}"
+            display_command = f"sudo sh -lc {shlex.quote(display_command)}"
 
         self.log(f"$ {display_command}")
         stdin, stdout, stderr = self.client.exec_command(sent_command, get_pty=sudo, timeout=self.timeout)
