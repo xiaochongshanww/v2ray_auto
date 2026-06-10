@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 from .installer import Installer
@@ -46,9 +47,13 @@ class DeploymentService:
             else:
                 generated = build_config_for_request(request)
 
+            self._assert_port_available(ssh, generated.port, generated.service_name)
             self._prepare_config_dir(ssh, generated.config_path)
-            self._upload_config(ssh, generated.config_path, generated.server_config)
-            self._restart_service(ssh, generated)
+            config_changed = self._upload_config_if_changed(ssh, generated.config_path, generated.server_config)
+            if config_changed:
+                self._restart_service(ssh, generated)
+            else:
+                capture("config unchanged; skip service restart")
             self._open_firewall(ssh, generated.port)
 
         return DeploymentResult(
@@ -70,17 +75,38 @@ class DeploymentService:
         result = ssh.run("cat /etc/os-release", check=True)
         return parse_os_release(result.stdout)
 
+    def _assert_port_available(self, ssh: SSHExecutor, port: int, service_name: str) -> None:
+        service_unit = service_name.removesuffix(".service")
+        command = (
+            f"ss -ltnp '( sport = :{port} )' 2>/dev/null | "
+            f"grep -v {service_unit} | tail -n +2"
+        )
+        result = ssh.run(command, sudo=True, check=False)
+        if result.stdout.strip():
+            raise RuntimeError(f"port {port} is already occupied by another process")
+
     def _prepare_config_dir(self, ssh: SSHExecutor, config_path: str) -> None:
         directory = config_path.rsplit("/", 1)[0]
         ssh.run(f"mkdir -p {directory}", sudo=True)
         ssh.run(f"test -f {config_path} && cp {config_path} {config_path}.bak.$(date +%Y%m%d%H%M%S) || true", sudo=True)
 
-    def _upload_config(self, ssh: SSHExecutor, config_path: str, config_data: dict) -> None:
+    def _upload_config_if_changed(self, ssh: SSHExecutor, config_path: str, config_data: dict) -> bool:
+        content = json.dumps(config_data, indent=2, ensure_ascii=False, sort_keys=True)
+        local_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        remote_hash = self._remote_file_sha256(ssh, config_path)
+        if remote_hash == local_hash:
+            return False
+
         tmp_path = f"/tmp/v2ray-auto-config-{id(config_data)}.json"
-        content = json.dumps(config_data, indent=2, ensure_ascii=False)
         ssh.put_text(tmp_path, content)
         ssh.run(f"mv {tmp_path} {config_path}", sudo=True)
         ssh.run(f"chmod 600 {config_path}", sudo=True)
+        return True
+
+    def _remote_file_sha256(self, ssh: SSHExecutor, config_path: str) -> str | None:
+        result = ssh.run(f"test -f {config_path} && sha256sum {config_path} | awk '{{print $1}}'", sudo=True, check=False)
+        value = result.stdout.strip()
+        return value or None
 
     def _restart_service(self, ssh: SSHExecutor, generated: GeneratedConfig) -> None:
         ssh.run("systemctl daemon-reload", sudo=True)
