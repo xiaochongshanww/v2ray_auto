@@ -74,15 +74,22 @@ class SSHExecutor:
     def run(self, command: str, *, sudo: bool = False, check: bool = True, redact: Iterable[str] = ()) -> CommandResult:
         sent_command = command
         display_command = self._redact(command, redact)
+        use_stdin_password = False
         if sudo:
-            sent_command = f"sudo -S -p '' sh -lc {shlex.quote(command)}"
-            display_command = f"sudo sh -lc {shlex.quote(display_command)}"
+            if self.request.username == "root":
+                sent_command = f"sh -lc {shlex.quote(command)}"
+                display_command = f"sh -lc {shlex.quote(display_command)}"
+            elif self.request.password:
+                sent_command = f"sudo -S -p '' sh -lc {shlex.quote(command)}"
+                display_command = f"sudo sh -lc {shlex.quote(display_command)}"
+                use_stdin_password = True
+            else:
+                sent_command = f"sudo -n sh -lc {shlex.quote(command)}"
+                display_command = f"sudo -n sh -lc {shlex.quote(display_command)}"
 
         self.log(f"$ {display_command}")
-        stdin, stdout, stderr = self.client.exec_command(sent_command, get_pty=sudo, timeout=self.timeout)
-        if sudo:
-            if not self.request.password:
-                raise RuntimeError("sudo requires password authentication in this deployment mode")
+        stdin, stdout, stderr = self.client.exec_command(sent_command, get_pty=use_stdin_password, timeout=self.timeout)
+        if use_stdin_password:
             stdin.write(self.request.password + "\n")
             stdin.flush()
 
