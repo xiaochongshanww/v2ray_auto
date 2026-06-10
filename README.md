@@ -6,12 +6,17 @@ This branch is a destructive rewrite of the original project.
 
 `refactor/destructive-core-rewrite`
 
+## Project goal
+
+The project goal is one-click deployment on a nearly empty VPS. The deployment flow must be able to bootstrap the target machine, install the managed V2Ray service, write config, restart the service, open the port, and return a generated connection URL.
+
 ## What changed
 
 - Root script `v2ray_auto.py` was removed because it conflicts with the new Python package name.
 - Runtime configuration moved to environment variables.
 - Legacy `config.py` no longer stores credentials.
 - Core logic moved to `v2ray_auto/core/`.
+- Empty-server bootstrap logic moved to `v2ray_auto/core/installer.py`.
 - HTTP entrypoint moved to `v2ray_auto/api/app.py`.
 - Old `vue_web/Python_api/config_server_api.py` is now a compatibility wrapper.
 - Legacy environment-dependent tests were replaced with pure function tests.
@@ -62,20 +67,21 @@ Payload example:
 }
 ```
 
-## Important behavior change
+## Deployment flow
 
-The refactored deployment service does not download and execute installer scripts. It expects the target server to already have a managed service named `v2ray.service`.
-
-The current deployment flow is:
+The refactored service is still designed for one-click deployment on an empty server:
 
 1. Connect to the server with SSH.
 2. Detect the Linux distribution.
-3. Generate a new server config.
-4. Back up the existing config file if present.
-5. Upload the new config.
-6. Restart the managed service.
-7. Open the generated TCP port in common local firewall tools when available.
-8. Return a generated connection URL.
+3. Install basic packages such as curl and certificates.
+4. Add a small swap file when memory is too low and no swap exists.
+5. Install V2Ray service when `v2ray.service` is missing.
+6. Generate a new server config.
+7. Back up the existing config file if present.
+8. Upload the new config.
+9. Restart the managed service.
+10. Open the generated TCP port in common local firewall tools when available.
+11. Return a generated connection URL.
 
 ## Tests
 
@@ -88,4 +94,4 @@ python -m pytest
 - Clean sensitive values from Git history.
 - Rewrite the Vue frontend to call `/api/deploy` with `X-API-Key`.
 - Decide whether to keep or remove the PyQt client.
-- Add an explicit installer plugin for preparing empty servers.
+- Add more installer tests and failure recovery for partially bootstrapped servers.
