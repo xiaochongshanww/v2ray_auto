@@ -11,6 +11,12 @@ from v2ray_auto.core.models import DeploymentRequest
 from v2ray_auto.core.settings import Settings, load_settings
 
 
+def _optional_int(value):
+    if value in (None, ""):
+        return None
+    return int(value)
+
+
 def create_app(settings: Settings | None = None) -> tuple[Flask, SocketIO]:
     settings = settings or load_settings()
     app = Flask(__name__)
@@ -44,7 +50,7 @@ def create_app(settings: Settings | None = None) -> tuple[Flask, SocketIO]:
                 remote_dir=payload.get("remoteDir") or settings.default_remote_dir,
                 install_warp=bool(payload.get("installWarp", False)),
                 profile=payload.get("profile") or "vless-reality-vision",
-                listen_port=payload.get("listenPort") or payload.get("listen_port"),
+                listen_port=_optional_int(payload.get("listenPort") or payload.get("listen_port")),
                 reality_server_name=payload.get("realityServerName") or payload.get("reality_server_name") or "www.microsoft.com",
                 reality_dest=payload.get("realityDest") or payload.get("reality_dest") or "www.microsoft.com:443",
             )
