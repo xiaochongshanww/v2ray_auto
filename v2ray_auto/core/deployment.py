@@ -12,6 +12,7 @@ from .os_release import parse_os_release
 from .profiles import build_config_for_request
 from .settings import Settings
 from .ssh import SSHExecutor
+from .state import RemoteStateStore
 
 
 class DeploymentService:
@@ -38,11 +39,13 @@ class DeploymentService:
             NetworkTuning(ssh, log=capture).enable_bbr_if_available()
 
             if request.profile == "vless-reality-vision":
-                key_pair = installer.generate_reality_key_pair()
+                profile_state = RemoteStateStore(ssh).get_or_create_reality_profile_state(installer)
                 generated = build_config_for_request(
                     request,
-                    reality_private_key=key_pair.private_key,
-                    reality_public_key=key_pair.public_key,
+                    reality_private_key=profile_state.private_key,
+                    reality_public_key=profile_state.public_key,
+                    client_id=profile_state.client_id,
+                    short_id=profile_state.short_id,
                 )
             else:
                 generated = build_config_for_request(request)
