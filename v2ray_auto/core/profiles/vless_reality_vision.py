@@ -17,9 +17,11 @@ def build_vless_reality_vision_config(
     dest: str,
     private_key: str,
     public_key: str,
+    client_id: str | None = None,
+    short_id: str | None = None,
 ) -> GeneratedConfig:
-    client_id = str(uuid.uuid4())
-    short_id = secrets.token_hex(8)
+    client_id = client_id or str(uuid.uuid4())
+    short_id = short_id or secrets.token_hex(8)
 
     server_config = {
         "log": {"loglevel": "warning"},
@@ -101,6 +103,7 @@ def build_vless_reality_vision_config(
             "flow": "xtls-rprx-vision",
             "serverName": server_name,
             "dest": dest,
+            "privateKey": private_key,
             "publicKey": public_key,
             "shortId": short_id,
             "mux": False,
