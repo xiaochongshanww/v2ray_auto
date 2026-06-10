@@ -5,11 +5,12 @@ from __future__ import annotations
 import json
 
 from .installer import Installer
-from .models import DeploymentRequest, DeploymentResult, LogSink
+from .models import CoreName, DeploymentRequest, DeploymentResult, GeneratedConfig, LogSink
+from .network_tuning import NetworkTuning
 from .os_release import parse_os_release
+from .profiles import build_config_for_request
 from .settings import Settings
 from .ssh import SSHExecutor
-from .vmess import build_vmess_config
 
 
 class DeploymentService:
@@ -30,38 +31,44 @@ class DeploymentService:
             distro_id, family = self._detect_os(ssh)
             capture(f"detected linux distribution: {distro_id} ({family})")
 
-            Installer(ssh, log=capture).ensure_installed(family)
+            core = self._core_for_profile(request.profile)
+            installer = Installer(ssh, core=core, log=capture)
+            installer.ensure_installed(family)
+            NetworkTuning(ssh, log=capture).enable_bbr_if_available()
 
-            vmess = build_vmess_config(request.host)
-            remote_config_path = self._resolve_config_path(ssh)
-            self._prepare_config_dir(ssh, remote_config_path)
-            self._upload_config(ssh, remote_config_path, vmess.server_config)
-            self._restart_service(ssh)
-            self._open_firewall(ssh, vmess.listen_port)
+            if request.profile == "vless-reality-vision":
+                key_pair = installer.generate_reality_key_pair()
+                generated = build_config_for_request(
+                    request,
+                    reality_private_key=key_pair.private_key,
+                    reality_public_key=key_pair.public_key,
+                )
+            else:
+                generated = build_config_for_request(request)
+
+            self._prepare_config_dir(ssh, generated.config_path)
+            self._upload_config(ssh, generated.config_path, generated.server_config)
+            self._restart_service(ssh, generated)
+            self._open_firewall(ssh, generated.port)
 
         return DeploymentResult(
             server=request.host,
-            port=vmess.listen_port,
-            uuid=vmess.client_id,
-            vmess_url=vmess.vmess_url,
-            remote_config_path=remote_config_path,
+            port=generated.port,
+            uuid=generated.client_id,
+            client_uri=generated.client_uri,
+            remote_config_path=generated.config_path,
+            core=generated.core,
+            profile=generated.profile,
+            service_name=generated.service_name,
             logs=logs,
         )
+
+    def _core_for_profile(self, profile: str) -> CoreName:
+        return "v2ray" if profile == "vmess-tcp-legacy" else "xray"
 
     def _detect_os(self, ssh: SSHExecutor) -> tuple[str, str]:
         result = ssh.run("cat /etc/os-release", check=True)
         return parse_os_release(result.stdout)
-
-    def _resolve_config_path(self, ssh: SSHExecutor) -> str:
-        candidates = [
-            "/usr/local/etc/v2ray/config.json",
-            "/etc/v2ray/config.json",
-        ]
-        for path in candidates:
-            result = ssh.run(f"test -e {path} && echo {path}", check=False)
-            if result.stdout.strip():
-                return path
-        return candidates[0]
 
     def _prepare_config_dir(self, ssh: SSHExecutor, config_path: str) -> None:
         directory = config_path.rsplit("/", 1)[0]
@@ -75,14 +82,16 @@ class DeploymentService:
         ssh.run(f"mv {tmp_path} {config_path}", sudo=True)
         ssh.run(f"chmod 600 {config_path}", sudo=True)
 
-    def _restart_service(self, ssh: SSHExecutor) -> None:
+    def _restart_service(self, ssh: SSHExecutor, generated: GeneratedConfig) -> None:
         ssh.run("systemctl daemon-reload", sudo=True)
-        result = ssh.run("systemctl list-unit-files | grep -E '^v2ray\\.service'", sudo=True, check=False)
+        service_pattern = generated.service_name.replace(".", "\\.")
+        result = ssh.run(f"systemctl list-unit-files | grep -E '^{service_pattern}'", sudo=True, check=False)
         if not result.stdout.strip():
-            raise RuntimeError("v2ray.service was not found after bootstrap install")
-        ssh.run("systemctl enable v2ray", sudo=True)
-        ssh.run("systemctl restart v2ray", sudo=True)
-        ssh.run("systemctl is-active v2ray", sudo=True)
+            raise RuntimeError(f"{generated.service_name} was not found after bootstrap install")
+        service_unit = generated.service_name.removesuffix(".service")
+        ssh.run(f"systemctl enable {service_unit}", sudo=True)
+        ssh.run(f"systemctl restart {service_unit}", sudo=True)
+        ssh.run(f"systemctl is-active {service_unit}", sudo=True)
 
     def _open_firewall(self, ssh: SSHExecutor, port: int) -> None:
         commands = [
