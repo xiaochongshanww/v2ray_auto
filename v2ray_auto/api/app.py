@@ -39,14 +39,30 @@ def create_app(settings: Settings | None = None) -> tuple[Flask, SocketIO]:
                 port=int(payload.get("port") or payload.get("serverPort") or 22),
                 username=payload.get("username"),
                 password=payload.get("password"),
-                private_key_path=payload.get("privateKeyPath"),
+                private_key_path=payload.get("privateKeyPath") or payload.get("private_key_path"),
                 email=payload.get("email"),
                 remote_dir=payload.get("remoteDir") or settings.default_remote_dir,
                 install_warp=bool(payload.get("installWarp", False)),
+                profile=payload.get("profile") or "vless-reality-vision",
+                listen_port=payload.get("listenPort") or payload.get("listen_port"),
+                reality_server_name=payload.get("realityServerName") or payload.get("reality_server_name") or "www.microsoft.com",
+                reality_dest=payload.get("realityDest") or payload.get("reality_dest") or "www.microsoft.com:443",
             )
             result = DeploymentService(settings, log=emit_log).deploy(deploy_request)
-            socketio.emit("configuration_complete", {"result": result.vmess_url})
-            return jsonify({"server": result.server, "port": result.port, "uuid": result.uuid, "vmessUrl": result.vmess_url, "remoteConfigPath": result.remote_config_path})
+            socketio.emit("configuration_complete", {"result": result.client_uri})
+            return jsonify(
+                {
+                    "server": result.server,
+                    "port": result.port,
+                    "uuid": result.uuid,
+                    "clientUri": result.client_uri,
+                    "vmessUrl": result.vmess_url,
+                    "remoteConfigPath": result.remote_config_path,
+                    "core": result.core,
+                    "profile": result.profile,
+                    "serviceName": result.service_name,
+                }
+            )
         except Exception as exc:
             emit_log(str(exc))
             return jsonify({"error": str(exc)}), 400
