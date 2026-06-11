@@ -1,3 +1,11 @@
+"""
+Deprecated legacy mail module.
+
+This module is superseded by v2ray_auto.core.settings SMTP configuration
+loaded from environment variables. Kept only to prevent import errors
+for old scripts.
+"""
+
 import logging
 
 
@@ -22,8 +30,6 @@ def send_url_to_email():
     smtp_port = 587
     # 邮箱账号
     username = 'wcg14231022@gmail.com'
-    # 邮箱密码或授权码
-    password = 'bspkamarwiqzfytn'
 
     # 邮件内容
     message = MIMEText('这是一封来自Python发送的邮件。', 'plain', 'utf-8')
@@ -70,4 +76,3 @@ def ip_detect_by_ping_pe():
     result_text = result_div.text.strip()
     # 输出查询结果
     print(f'{public_ip} 的查询结果：{result_text}')
-ip_detect_by_ping_pe()

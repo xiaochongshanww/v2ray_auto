@@ -20,4 +20,5 @@ def test_build_vless_reality_vision_config():
     inbound = generated.server_config["inbounds"][0]
     assert inbound["protocol"] == "vless"
     assert inbound["streamSettings"]["security"] == "reality"
+    assert inbound["streamSettings"]["network"] == "tcp"
     assert inbound["settings"]["clients"][0]["flow"] == "xtls-rprx-vision"

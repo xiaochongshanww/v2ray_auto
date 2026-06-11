@@ -31,3 +31,10 @@ def test_legacy_profile_dispatches():
     assert generated.core == "v2ray"
     assert generated.profile == "vmess-tcp-legacy"
     assert generated.port == 23456
+    assert generated.client_uri.startswith("vmess://")
+    # client_uri is a base64-encoded JSON; verify it decodes properly
+    encoded = generated.client_uri.removeprefix("vmess://")
+    import base64, json
+    decoded = json.loads(base64.b64decode(encoded))
+    assert decoded["add"] == "203.0.113.10"
+    assert decoded["port"] == "23456"

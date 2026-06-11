@@ -9,6 +9,7 @@ import random
 import uuid
 
 from v2ray_auto.core.models import GeneratedConfig
+from v2ray_auto.core.vmess import build_vmess_client_uri
 
 
 def build_vmess_tcp_legacy_config(server_host: str, *, listen_port: int | None = None) -> GeneratedConfig:
@@ -35,7 +36,7 @@ def build_vmess_tcp_legacy_config(server_host: str, *, listen_port: int | None =
         service_name="v2ray.service",
         config_path="/usr/local/etc/v2ray/config.json",
         server_config=server_config,
-        client_uri="legacy-client-link-not-generated-yet",
+        client_uri=build_vmess_client_uri(server_host, port, client_id),
         port=port,
         client_id=client_id,
         metadata={"network": "tcp", "security": "none", "server": server_host},

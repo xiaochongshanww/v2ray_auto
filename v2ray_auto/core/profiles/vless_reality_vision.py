@@ -42,7 +42,7 @@ def build_vless_reality_vision_config(
                     "decryption": "none",
                 },
                 "streamSettings": {
-                    "network": "raw",
+                    "network": "tcp",
                     "security": "reality",
                     "realitySettings": {
                         "show": False,
@@ -98,7 +98,7 @@ def build_vless_reality_vision_config(
         port=listen_port,
         client_id=client_id,
         metadata={
-            "network": "raw",
+            "network": "tcp",
             "security": "reality",
             "flow": "xtls-rprx-vision",
             "serverName": server_name,

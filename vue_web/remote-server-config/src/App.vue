@@ -1,57 +1,114 @@
 <template>
   <div id="app">
-    <h1>服务器配置</h1>
-    <form @submit.prevent="configureServer">
-      <div class="form-group">
-        <label for="ip">服务器 IP:</label>
-        <input type="text" id="ip" v-model="serverIp" required />
-      </div>
-      <div class="form-group">
-        <label for="port">服务器端口:</label>
-        <input type="number" id="port" v-model="serverPort" required />
-      </div>
-      <div class="form-group">
-        <label for="username">用户名:</label>
-        <input type="text" id="username" v-model="username" required />
-      </div>
-      <div class="form-group">
-        <label for="password">密码:</label>
-        <input type="password" id="password" v-model="password" required />
-      </div>
-      <div class="form-group">
-        <label for="email">接收邮箱:</label>
-        <input type="email" id="email" v-model="email" required />
-      </div>
-      <div class="form-group">
-        <label for="os">操作系统类型:</label>
-        <select id="os" v-model="osType" required>
-          <option value="centos">Centos</option>
-          <option value="ubuntu">Ubuntu</option>
-          <option value="azure ubuntu">Azure Ubuntu</option>
-          <option value="debian">Debian</option>
-          <option value="fedora">Fedora</option>
-          <option value="redhat">Redhat</option>
-        </select>
-      </div>
-      <button type="submit" class="btn">配置服务器</button>
-    </form>
+    <h1>V2Ray Auto - 一键部署</h1>
 
-    <!-- 配置过程输出框部分 -->
-    <div v-if="processOutput" class="output-container">
-      <h2>配置过程</h2>
+    <div v-if="!deployed" class="form-container">
+      <!-- API Key -->
+      <div class="form-group">
+        <label for="apiKey">API Key:</label>
+        <input type="password" id="apiKey" v-model="apiKey" placeholder="输入 API Key" />
+      </div>
+
+      <!-- 服务器配置 -->
+      <fieldset>
+        <legend>服务器连接</legend>
+        <div class="form-group">
+          <label for="ip">服务器 IP:</label>
+          <input type="text" id="ip" v-model="serverIp" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="port">SSH 端口:</label>
+            <input type="number" id="port" v-model="serverPort" required />
+          </div>
+          <div class="form-group">
+            <label for="listenPort">监听端口:</label>
+            <input type="number" id="listenPort" v-model="listenPort" placeholder="默认 443" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="username">用户名:</label>
+          <input type="text" id="username" v-model="username" required />
+        </div>
+        <div class="form-group">
+          <label for="password">密码:</label>
+          <input type="password" id="password" v-model="password" />
+        </div>
+      </fieldset>
+
+      <!-- 部署配置 -->
+      <fieldset>
+        <legend>部署配置</legend>
+        <div class="form-group">
+          <label for="profile">配置模板:</label>
+          <select id="profile" v-model="profile">
+            <option value="vless-reality-vision">VLESS + REALITY + Vision（默认）</option>
+            <option value="vmess-tcp-legacy">VMess TCP（旧版兼容）</option>
+          </select>
+        </div>
+
+        <template v-if="profile === 'vless-reality-vision'">
+          <div class="form-group">
+            <label for="realityServerName">REALITY ServerName:</label>
+            <input type="text" id="realityServerName" v-model="realityServerName" />
+          </div>
+          <div class="form-group">
+            <label for="realityDest">REALITY Dest:</label>
+            <input type="text" id="realityDest" v-model="realityDest" />
+          </div>
+        </template>
+
+        <div class="form-group">
+          <label for="email">通知邮箱（可选）:</label>
+          <input type="email" id="email" v-model="email" />
+        </div>
+      </fieldset>
+
+      <button type="button" class="btn" @click="deploy" :disabled="deploying">
+        {{ deploying ? '部署中...' : '开始部署' }}
+      </button>
+    </div>
+
+    <!-- 配置过程输出 -->
+    <div v-if="processOutput.length" class="output-container">
+      <h2>部署日志</h2>
       <div class="output-box" ref="processOutputBox">
-        <pre class="config-process-pre">{{ processOutput }}</pre>
+        <pre class="output-pre">{{ processOutput }}</pre>
       </div>
     </div>
 
-    <!-- 配置结果输出框部分 -->
-    <div v-if="resultOutput" class="output-container">
-      <h2>配置结果</h2>
-      <div class="output-box" ref="resultOutputBox">
-        <pre class="config-result-pre">{{ resultOutput }}</pre>
+    <!-- 部署结果 -->
+    <div v-if="result" class="output-container">
+      <h2>部署成功</h2>
+      <div class="result-card">
+        <div class="result-row">
+          <span class="result-label">服务器:</span>
+          <span class="result-value">{{ result.server }}</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">端口:</span>
+          <span class="result-value">{{ result.port }}</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">核心:</span>
+          <span class="result-value">{{ result.core }}</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">模板:</span>
+          <span class="result-value">{{ result.profile }}</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">UUID:</span>
+          <span class="result-value result-uuid">{{ result.uuid }}</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">客户端 URI:</span>
+          <span class="result-value result-uri">{{ result.clientUri }}</span>
+        </div>
       </div>
-      <div class="center-config-button">
-        <button @click="copyToClipboard" class="btn">复制配置</button>
+      <div class="center">
+        <button @click="copyResult" class="btn">复制 URI</button>
+        <button @click="reset" class="btn btn-secondary">重新部署</button>
       </div>
     </div>
   </div>
@@ -63,102 +120,103 @@ import io from "socket.io-client";
 export default {
   data() {
     return {
+      apiKey: "",
       serverIp: "",
       serverPort: "22",
+      listenPort: "",
       username: "",
       password: "",
-      osType: "centos",
       email: "",
+      profile: "vless-reality-vision",
+      realityServerName: "www.microsoft.com",
+      realityDest: "www.microsoft.com:443",
+      deploying: false,
+      deployed: false,
       processOutput: "",
-      resultOutput: "",
+      result: null,
       socket: null,
     };
   },
   mounted() {
-    this.socket = io("http://127.0.0.1:5000/", {
-    // path: '/socket.io/',
-    transports: ['websocket'],
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    timeout: 20000,
-    autoConnect: true,
-    debug: true
+    this.socket = io("/", {
+      transports: ["websocket"],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+    this.socket.on("process_update", (data) => {
+      this.processOutput += `\n${data.message}`;
+      this.$nextTick(() => {
+        const box = this.$refs.processOutputBox;
+        if (box) box.scrollTop = box.scrollHeight;
+      });
     });
   },
   methods: {
-    configureServer() {
-      this.processOutput = `正在配置服务器...\n服务器 IP: ${this.serverIp}\n服务器端口: ${this.serverPort}\n用户名: ${this.username}\n操作系统类型: ${this.osType}`;
-      this.resultOutput = "";
+    deploy() {
+      if (!this.apiKey) {
+        alert("请输入 API Key");
+        return;
+      }
+      this.deploying = true;
+      this.processOutput = "";
+      this.result = null;
+      this.deployed = false;
 
-      // Use fetch to send a POST request to the server
-      fetch("http://127.0.0.1:5000/api/configure", {
+      const payload = {
+        host: this.serverIp,
+        serverPort: parseInt(this.serverPort),
+        username: this.username,
+        password: this.password || undefined,
+        email: this.email || undefined,
+        profile: this.profile,
+      };
+
+      if (this.listenPort) {
+        payload.listenPort = parseInt(this.listenPort);
+      }
+      if (this.profile === "vless-reality-vision") {
+        payload.realityServerName = this.realityServerName;
+        payload.realityDest = this.realityDest;
+      }
+
+      fetch("/api/deploy", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-API-Key": this.apiKey,
         },
-        body: JSON.stringify({
-          serverIp: this.serverIp,
-          serverPort: this.serverPort,
-          username: this.username,
-          password: this.password,
-          email: this.email,
-          os: this.osType,
-        }),
+        body: JSON.stringify(payload),
       })
         .then((response) => {
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json().then((err) => {
+              throw new Error(err.error || `HTTP ${response.status}`);
+            });
           }
           return response.json();
         })
         .then((data) => {
-          if (data.processOutput) {
-            this.processOutput += `\n${data.processOutput}`;
-          }
-          if (data.resultOutput) {
-            this.resultOutput = data.resultOutput;
-          }
+          this.result = data;
+          this.deployed = true;
         })
         .catch((error) => {
-          console.error("Error:", error);
-          this.processOutput += `\n配置接口返回错误: ${error.message}`;
-        });
-
-      // Listen for process updates from the server
-      this.socket.on("process_update", (data) => {
-        this.processOutput += `\n${data.message}`;
-        this.$nextTick(() => {
-          const outputBox = this.$refs.processOutputBox;
-          outputBox.scrollTop = outputBox.scrollHeight;
-        });
-      });
-
-      // Listen for the final result from the server
-      this.socket.on("configuration_complete", (data) => {
-        this.resultOutput = data.result;
-        this.$nextTick(() => {
-          const outputBox = this.$refs.resultOutputBox;
-          outputBox.scrollTop = outputBox.scrollHeight;
-
-          // 页面滚动到最底部
-          window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: "smooth",  // 平滑滚动
-          });
-        });
-        this.socket.disconnect();
-      });
-    },
-    copyToClipboard() {
-      navigator.clipboard
-        .writeText(this.resultOutput)
-        .then(() => {
-          alert("配置已复制到剪贴板");
+          this.processOutput += `\n[错误] ${error.message}`;
         })
-        .catch((err) => {
-          console.error("Failed to copy text: ", err);
+        .finally(() => {
+          this.deploying = false;
         });
+    },
+    copyResult() {
+      if (this.result) {
+        navigator.clipboard.writeText(this.result.clientUri).then(() => {
+          alert("客户端 URI 已复制到剪贴板");
+        });
+      }
+    },
+    reset() {
+      this.deployed = false;
+      this.result = null;
+      this.processOutput = "";
     },
   },
 };
@@ -169,35 +227,50 @@ export default {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #333;
   padding: 20px;
-  max-width: 600px;
+  max-width: 720px;
   margin: 0 auto;
-  background: #f9f9f9;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
   font-size: 24px;
-  margin-bottom: 20px;
+  text-align: center;
+  margin-bottom: 24px;
 }
 
-form {
-  margin: 20px 0;
+fieldset {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+legend {
+  font-weight: bold;
+  font-size: 14px;
+  padding: 0 8px;
 }
 
 .form-group {
-  margin-bottom: 15px;
-  text-align: left;
+  margin-bottom: 12px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row .form-group {
+  flex: 1;
 }
 
 label {
   display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
 }
 
 input,
@@ -206,107 +279,113 @@ select {
   padding: 10px;
   font-size: 14px;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 6px;
   box-sizing: border-box;
+  transition: border-color 0.2s;
 }
 
 input:focus,
 select:focus {
   border-color: #007aff;
   outline: none;
-  box-shadow: 0 0 5px rgba(0, 122, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
 }
 
 .btn {
   display: inline-block;
-  padding: 10px 20px;
+  padding: 12px 32px;
   font-size: 16px;
+  font-weight: 600;
   color: #fff;
   background-color: #007aff;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s;
+  width: 100%;
 }
 
 .btn:hover {
   background-color: #005bb5;
 }
 
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  margin-top: 8px;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
 .output-container {
   margin-top: 20px;
-  text-align: left;
 }
 
 .output-box {
-  max-height: 200px; /* 设置最大高度 */
-  overflow-y: auto; /* 设置垂直滚动条 */
-  background: #fff;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
-pre {
-  background: #fff;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.config-process-pre {
-  background: #fff;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
+.output-pre {
   margin: 0;
-}
-
-.config-result-pre {
-  background: #fff;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
   white-space: pre-wrap;
   word-wrap: break-word;
-  margin: 0;
+}
+
+.result-card {
+  background: #f0f9f0;
+  border: 1px solid #b8e6b8;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.result-row {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.result-row:last-child {
+  border-bottom: none;
+}
+
+.result-label {
+  font-weight: 600;
+  width: 120px;
+  flex-shrink: 0;
+  color: #555;
+}
+
+.result-value {
+  word-break: break-all;
+}
+
+.result-uuid {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 13px;
+}
+
+.result-uri {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 13px;
+  color: #1a7a1a;
 }
 
 .center {
   text-align: center;
-}
-
-.center-config-button {
-  text-align: center;
-  margin-top: 20px;
-}
-
-/* 响应式设计 */
-@media (max-width: 600px) {
-  #app {
-    padding: 10px;
-    max-width: 100%;
-    margin: 0 10px;
-  }
-
-  h1 {
-    font-size: 20px;
-  }
-
-  .btn {
-    width: 100%;
-    padding: 15px;
-    font-size: 18px;
-  }
-
-  input,
-  select {
-    padding: 15px;
-    font-size: 16px;
-  }
 }
 </style>

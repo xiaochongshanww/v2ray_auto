@@ -105,14 +105,30 @@ class Installer:
         if self.core != "xray":
             raise RuntimeError("REALITY key pair generation requires xray core")
         result = self.ssh.run("xray x25519", sudo=True)
-        private_key = self._extract_key(result.stdout, "Private key")
-        public_key = self._extract_key(result.stdout, "Public key")
+        private_key = self._extract_private_key(result.stdout)
+        public_key = self._extract_public_key(result.stdout)
         return RealityKeyPair(private_key=private_key, public_key=public_key)
 
     @staticmethod
-    def _extract_key(output: str, label: str) -> str:
-        pattern = rf"{re.escape(label)}:\s*([A-Za-z0-9_-]+)"
-        match = re.search(pattern, output)
+    def _extract_private_key(output: str) -> str:
+        # Supports multiple xray x25519 output formats:
+        #   "PrivateKey: <key>" (new format, no space)
+        #   "Private key: <key>" (old format, with space)
+        #   "<key>" (bare key on first line, rare)
+        match = re.search(r"Private\s*[Kk]ey:\s*([A-Za-z0-9_-]+)", output)
+        if match:
+            return match.group(1)
+        lines = [line.strip() for line in output.splitlines() if line.strip()]
+        if lines and not re.search(r":", lines[0]):
+            return lines[0]
+        raise RuntimeError("failed to parse private key from xray output")
+
+    @staticmethod
+    def _extract_public_key(output: str) -> str:
+        # Supports:
+        #   "Password (PublicKey): <key>" (new format)
+        #   "Public key: <key>" (old format)
+        match = re.search(r"(?:Password \(PublicKey\)|Public key):\s*([A-Za-z0-9_-]+)", output)
         if not match:
-            raise RuntimeError(f"failed to parse {label} from xray output")
+            raise RuntimeError("failed to parse public key from xray output")
         return match.group(1)

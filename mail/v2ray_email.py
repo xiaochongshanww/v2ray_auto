@@ -1,19 +1,23 @@
 """
-邮件模块
+Deprecated legacy email module.
+
+This module is superseded by environment-variable-based SMTP configuration
+in v2ray_auto.core.settings. Kept only for historical reference.
 """
-from common import *
+
 
 class V2RayEmail:
     def __init__(self):
-        self.my_email = "wcg14231022@gmail.com"
-        self.my_user = "wcg14231022@gmail.com"
-        # self.my_email_key = V2RayEmail.get_email_key()
-        self.my_email_key = config.GMAIL_CODE
-        self.target_email = "327306310@qq.com"
-        self.smtp_server = "smtp.gmail.com"
+        # NOTE: Use environment variables instead (V2RAY_AUTO_SMTP_*).
+        # The old config.GMAIL_CODE was removed during the destructive refactor.
+        self.my_email = ""
+        self.my_user = ""
+        self.my_email_key = ""
+        self.target_email = ""
+        self.smtp_server = ""
         self.smtp_port = 587
-        self.sender = "wcg"
-        self.receiver = "wcg"
+        self.sender = ""
+        self.receiver = ""
         self.message = None
 
     def set_message(self, message: str, header="auto send email"):

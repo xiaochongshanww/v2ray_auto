@@ -42,6 +42,7 @@ class SSHExecutor:
         self.timeout = timeout
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self._closed = False
 
     def __enter__(self) -> "SSHExecutor":
         self.connect()
@@ -68,6 +69,9 @@ class SSHExecutor:
         self.log("ssh connected")
 
     def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
         self.client.close()
         self.log("ssh closed")
 
