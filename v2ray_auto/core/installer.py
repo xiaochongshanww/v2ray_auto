@@ -72,11 +72,11 @@ class Installer:
         self.ssh.run(package_bootstrap_command(family), sudo=True)
 
     def ensure_swap_for_small_server(self) -> None:
-        memory_result = self.ssh.run("free -m | awk '/Mem:/ {print $7}'", check=False)
+        mem_result = self.ssh.run("free -m | awk '/Mem:/ {print $2}'", check=False)
         try:
-            available_mb = int(memory_result.stdout.strip() or "0")
+            total_mb = int(mem_result.stdout.strip() or "0")
         except ValueError:
-            available_mb = 0
+            total_mb = 0
 
         swap_result = self.ssh.run("swapon --show | wc -l", check=False)
         try:
@@ -84,11 +84,11 @@ class Installer:
         except ValueError:
             swap_lines = 0
 
-        if available_mb >= 128 or swap_lines > 0:
-            self.log("swap bootstrap skipped")
+        if total_mb >= 2048 or swap_lines > 0:
+            self.log(f"swap bootstrap skipped (total={total_mb}MB, swap={swap_lines} lines)")
             return
 
-        self.log("low memory detected; creating 1G swapfile")
+        self.log(f"low memory detected ({total_mb}MB total); creating 1G swapfile")
         self.ssh.run("fallocate -l 1G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=1024", sudo=True)
         self.ssh.run("chmod 600 /swapfile", sudo=True)
         self.ssh.run("mkswap /swapfile", sudo=True)
