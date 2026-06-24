@@ -59,3 +59,27 @@ class NetworkTuning:
         self.ssh.run(f"rm {remote_tmp}", sudo=True)
         self.ssh.run(f"sysctl -p {SYSCTL_FILE}", sudo=True, check=False)
         self.log("TCP buffers tuned")
+
+    def enable_pmtu_discovery(self) -> None:
+        self.log("enabling PMTU discovery and MSS clamping")
+        current = self.ssh.run("sysctl -n net.ipv4.tcp_mtu_probing", check=False)
+        if current.stdout.strip() == "1":
+            self.log("PMTU discovery already enabled; skip")
+            return
+
+        self.ssh.run("sysctl -w net.ipv4.tcp_mtu_probing=1", sudo=True)
+        for chain in ("FORWARD", "INPUT", "OUTPUT"):
+            self.ssh.run(
+                f"iptables -t mangle -C {chain} -p tcp --tcp-flags SYN,RST SYN "
+                f"-j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || "
+                f"iptables -t mangle -A {chain} -p tcp --tcp-flags SYN,RST SYN "
+                f"-j TCPMSS --clamp-mss-to-pmtu",
+                sudo=True, check=False,
+            )
+
+        self.ssh.run(
+            f"grep -q 'tcp_mtu_probing' {SYSCTL_FILE} 2>/dev/null || "
+            f"echo 'net.ipv4.tcp_mtu_probing = 1' >> {SYSCTL_FILE}",
+            sudo=True,
+        )
+        self.log("PMTU discovery enabled")

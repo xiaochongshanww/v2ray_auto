@@ -42,6 +42,7 @@ class DeploymentService:
             tuning = NetworkTuning(ssh, log=capture)
             tuning.enable_bbr_if_available()
             tuning.tune_tcp_buffers()
+            tuning.enable_pmtu_discovery()
 
             if request.profile == "vless-reality-vision":
                 profile_state = RemoteStateStore(ssh).get_or_create_reality_profile_state(installer)
