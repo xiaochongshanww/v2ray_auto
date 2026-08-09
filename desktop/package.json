@@ -1,0 +1,86 @@
+{
+  "name": "v2ray-auto-desktop",
+  "version": "0.1.0",
+  "description": "V2Ray Auto desktop client (Electron + Python sidecar)",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build:renderer": "cd ../vue_web/remote-server-config && npx vite build --outDir ../../desktop/renderer --emptyOutDir",
+    "setup:backend": "runtime/python3.13/bin/python3 -m pip install -q -r ../requirements.txt",
+    "setup": "npm install && npm run build:renderer && npm run setup:backend",
+    "dist": "npm run build:renderer && electron-builder",
+    "dist:mac": "npm run build:renderer && cross-env-shell ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --mac",
+    "dist:win": "npm run build:renderer && cross-env-shell ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --win",
+    "dist:linux": "npm run build:renderer && cross-env-shell ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --linux"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "electron": "^43.3.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.v2rayauto.desktop",
+    "productName": "V2Ray Auto",
+    "asar": true,
+    "publish": {
+      "provider": "github",
+      "owner": "xiaochongshanww",
+      "repo": "v2ray_auto"
+    },
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/trayTemplate.png"
+    ],
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend"
+      },
+      {
+        "from": "runtime",
+        "to": "runtime"
+      },
+      {
+        "from": "../v2ray_auto",
+        "to": "v2ray_auto",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.png"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}

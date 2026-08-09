@@ -13,7 +13,10 @@ from v2ray_auto.core.deployment import DeploymentService
 from v2ray_auto.core.models import DeploymentRequest
 from v2ray_auto.core.settings import Settings, load_settings
 
-_LOG_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "logs")
+_LOG_DIR = os.environ.get(
+    "V2RAY_AUTO_LOG_DIR",
+    os.path.join(os.path.dirname(__file__), "..", "..", "logs"),
+)
 
 
 def _setup_file_logger(name: str) -> logging.Logger:
