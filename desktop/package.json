@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "V2Ray Auto desktop client (Electron + Python sidecar)",
   "homepage": "https://github.com/xiaochongshanww/v2ray_auto",
+  "author": {
+    "name": "V2Ray Auto",
+    "email": "dev@v2ray-auto.local"
+  },
   "private": true,
   "main": "main.js",
   "scripts": {
