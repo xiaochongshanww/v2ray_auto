@@ -4,7 +4,7 @@ This branch is a destructive rewrite of the original project.
 
 ## Branch
 
-`refactor/destructive-core-rewrite`
+`main`
 
 ## Project goal
 
@@ -41,7 +41,7 @@ Legacy VMess TCP is kept as a compatibility profile, but it is no longer the def
 - Config generation moved to `v2ray_auto/core/profiles/`.
 - Basic BBR network tuning moved to `v2ray_auto/core/network_tuning.py`.
 - HTTP entrypoint moved to `v2ray_auto/api/app.py`.
-- Old `vue_web/Python_api/config_server_api.py` is now a compatibility wrapper.
+- Legacy `vue_web/Python_api/` backend and root helper scripts were removed.
 - Legacy environment-dependent tests were replaced with pure function tests.
 
 ## Runtime configuration
@@ -132,8 +132,12 @@ python -m pytest
 ## Remaining work
 
 - Clean sensitive values from Git history.
-- Rewrite the Vue frontend to call `/api/deploy` with `X-API-Key`.
-- Decide whether to keep or remove the PyQt client.
+- Decide whether to keep or remove the PyQt desktop client.
 - Finish full legacy VMess client URI generation.
 - Add more installer tests and failure recovery for partially bootstrapped servers.
-- Add config hash comparison to skip unnecessary restarts.
+
+Done since the rewrite started:
+
+- Vue frontend calls `/api/deploy` with `X-API-Key`.
+- Config hash comparison skips unnecessary service restarts.
+- Legacy `vue_web/Python_api/` backend and root helper scripts removed.

@@ -123,9 +123,6 @@ class DeploymentService:
                 capture(f"journalctl:\n{journal.stdout.strip()}")
             capture(f"current listeners on {port}: {result.stdout.strip() or 'none'}")
 
-    def _core_for_profile(self, profile: str) -> CoreName:
-        return "v2ray" if profile == "vmess-tcp-legacy" else "xray"
-
     def _prepare_config_dir(self, ssh: SSHExecutor, config_path: str) -> None:
         directory = config_path.rsplit("/", 1)[0]
         ssh.run(f"mkdir -p {directory}", sudo=True)
