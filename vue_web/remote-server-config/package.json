@@ -10,9 +10,11 @@
     "lint": "eslint --ext .js,.vue src"
   },
   "dependencies": {
-    "@rolldown/binding-darwin-arm64": "^1.2.3",
     "socket.io-client": "^4.8.0",
     "vue": "^3.2.13"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-darwin-arm64": "^1.2.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.8",
