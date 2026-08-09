@@ -63,6 +63,10 @@ jobs:
         working-directory: desktop
         run: npm ci
 
+      - name: Install frontend npm deps
+        working-directory: vue_web/remote-server-config
+        run: npm ci
+
       - name: Build and package
         working-directory: desktop
         env:
