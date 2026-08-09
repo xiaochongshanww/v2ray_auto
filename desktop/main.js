@@ -106,10 +106,14 @@ function deleteNode(id) {
   return saveNodes(listNodes().filter((n) => n.id !== id))
 }
 
+function backendBinaryPath() {
+  return path.join(backendDir(), process.platform === 'win32' ? 'v2ray-backend.exe' : 'v2ray-backend')
+}
+
 function resolvePython() {
   const configured = process.env.V2RAY_DESKTOP_PYTHON
   if (configured) return configured
-  const runtimeDir = path.join(resourcesPath(), 'runtime', 'python3.13')
+  const runtimeDir = path.join(__dirname, 'runtime', 'python3.13')
   const candidates = process.platform === 'win32'
     ? [path.join(runtimeDir, 'python.exe'), path.join(runtimeDir, 'python3.13.exe')]
     : [path.join(runtimeDir, 'bin', 'python3')]
@@ -119,11 +123,27 @@ function resolvePython() {
   return 'python3'
 }
 
+function backendInvocation() {
+  if (app.isPackaged) {
+    const bin = backendBinaryPath()
+    if (!fs.existsSync(bin)) throw new Error(`backend binary missing: ${bin}`)
+    return { command: bin, args: [] }
+  }
+  return { command: resolvePython(), args: [launcherPath()] }
+}
+
 function startBackend() {
-  const python = resolvePython()
+  let invocation
+  try {
+    invocation = backendInvocation()
+  } catch (err) {
+    process.stderr.write(`[backend] ${err.message}\n`)
+    app.quit()
+    return
+  }
   apiKey = process.env.V2RAY_DESKTOP_API_KEY || crypto.randomBytes(24).toString('hex')
 
-  backend = spawn(python, [launcherPath()], {
+  backend = spawn(invocation.command, invocation.args, {
     env: {
       ...process.env,
       V2RAY_DESKTOP_API_KEY: apiKey,
@@ -296,7 +316,13 @@ function setupAutoUpdater() {
 app.whenReady().then(() => {
   ipcMain.handle('get-api-base', () => apiBase)
   ipcMain.handle('get-api-key', () => apiKey)
-  ipcMain.handle('get-python-path', () => resolvePython())
+  ipcMain.handle('get-backend-path', () => {
+    try {
+      return backendInvocation().command
+    } catch (err) {
+      return err.message
+    }
+  })
   ipcMain.handle('history-list', () => listHistory())
   ipcMain.handle('history-add', (_event, record) => addHistory(record))
   ipcMain.handle('history-clear', () => clearHistory())

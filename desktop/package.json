@@ -46,21 +46,12 @@
     ],
     "extraResources": [
       {
-        "from": "backend",
+        "from": "backend/dist",
         "to": "backend"
       },
       {
-        "from": "runtime",
-        "to": "runtime"
-      },
-      {
-        "from": "../v2ray_auto",
-        "to": "v2ray_auto",
-        "filter": [
-          "**/*",
-          "!**/__pycache__/**",
-          "!**/*.pyc"
-        ]
+        "from": "backend/launcher.py",
+        "to": "backend/launcher.py"
       }
     ],
     "mac": {

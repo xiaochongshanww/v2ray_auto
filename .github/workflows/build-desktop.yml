@@ -31,10 +31,16 @@ jobs:
         include:
           - os: macos-latest
             target: mac
+            py: 3
+            venvpy: .venv/bin/python
           - os: windows-latest
             target: win
+            py: ""
+            venvpy: .venv/Scripts/python.exe
           - os: ubuntu-latest
             target: linux
+            py: 3
+            venvpy: .venv/bin/python
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -45,19 +51,20 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
 
-      - name: Fetch Python runtime
-        working-directory: desktop
-        run: bash scripts/fetch-runtime.sh
-
-      - name: Install Python deps into runtime
-        working-directory: desktop
-        shell: bash
+      - name: Build backend binary
         run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            runtime/python3.13/python.exe -m pip install -q -r ../requirements.txt
-          else
-            runtime/python3.13/bin/python3 -m pip install -q -r ../requirements.txt
-          fi
+          python${{ matrix.py }} -m venv .venv
+          ${{ matrix.venvpy }} -m pip install -q -r requirements.txt pyinstaller
+          ${{ matrix.venvpy }} -m PyInstaller \
+            --onefile \
+            --name v2ray-backend \
+            --paths . \
+            --hidden-import simple_websocket \
+            --hidden-import engineio.async_drivers.threading \
+            --distpath desktop/backend/dist \
+            --workpath /tmp/pyi-work \
+            --specpath /tmp/pyi-spec \
+            desktop/backend/launcher.py
 
       - name: Install npm deps
         working-directory: desktop

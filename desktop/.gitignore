@@ -4,3 +4,6 @@ dist/
 renderer/
 *.log
 .DS_Store
+backend/dist/
+backend/build/
+*.spec
