@@ -31,16 +31,10 @@ jobs:
         include:
           - os: macos-latest
             target: mac
-            py: 3
-            venvpy: .venv/bin/python
           - os: windows-latest
             target: win
-            py: ""
-            venvpy: .venv/Scripts/python.exe
           - os: ubuntu-latest
             target: linux
-            py: 3
-            venvpy: .venv/bin/python
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -52,10 +46,18 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
 
       - name: Build backend binary
+        shell: bash
         run: |
-          python${{ matrix.py }} -m venv .venv
-          ${{ matrix.venvpy }} -m pip install -q -r requirements.txt pyinstaller
-          ${{ matrix.venvpy }} -m PyInstaller \
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            PY=python
+            VENVPY=.venv/Scripts/python.exe
+          else
+            PY=python3
+            VENVPY=.venv/bin/python
+          fi
+          $PY -m venv .venv
+          $VENVPY -m pip install -q -r requirements.txt pyinstaller
+          $VENVPY -m PyInstaller \
             --onefile \
             --name v2ray-backend \
             --paths . \
