@@ -9,7 +9,6 @@ let backend = null
 let mainWindow = null
 let tray = null
 let apiBase = null
-let apiKey = null
 
 function resourcesPath() {
   return app.isPackaged ? process.resourcesPath : __dirname
@@ -141,12 +140,9 @@ function startBackend() {
     app.quit()
     return
   }
-  apiKey = process.env.V2RAY_DESKTOP_API_KEY || crypto.randomBytes(24).toString('hex')
-
   backend = spawn(invocation.command, invocation.args, {
     env: {
       ...process.env,
-      V2RAY_DESKTOP_API_KEY: apiKey,
       V2RAY_AUTO_LOG_DIR: path.join(app.getPath('userData'), 'logs'),
       PYTHONUNBUFFERED: '1',
     },
@@ -315,7 +311,6 @@ function setupAutoUpdater() {
 
 app.whenReady().then(() => {
   ipcMain.handle('get-api-base', () => apiBase)
-  ipcMain.handle('get-api-key', () => apiKey)
   ipcMain.handle('get-backend-path', () => {
     try {
       return backendInvocation().command

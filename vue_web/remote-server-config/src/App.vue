@@ -51,12 +51,6 @@
         <p v-if="!nodes.length" class="node-empty">暂无节点。填写下方表单后点击「保存当前为节点」。</p>
       </div>
 
-      <!-- API Key -->
-      <div class="form-group">
-        <label for="apiKey">API Key:</label>
-        <input type="password" id="apiKey" v-model="apiKey" placeholder="输入 API Key" />
-      </div>
-
       <!-- 服务器配置 -->
       <fieldset>
         <legend>服务器连接</legend>
@@ -204,7 +198,6 @@ import io from "socket.io-client";
 export default {
   data() {
     return {
-      apiKey: "",
       apiBase: "",
       isDesktop: false,
       rememberPassword: false,
@@ -230,16 +223,15 @@ export default {
     };
   },
   async mounted() {
-    if (window.v2rayDesktop) {
-      this.isDesktop = true;
-      try {
-        this.apiKey = (await window.v2rayDesktop.getApiKey()) || "";
-        const base = await window.v2rayDesktop.getApiBase();
-        if (base) this.connectSocket(base);
-        window.v2rayDesktop.onBackendReady((base) => this.connectSocket(base));
-      } catch (e) {
-        this.processOutput += `\n[错误] 桌面端初始化失败: ${e.message}`;
-      }
+      if (window.v2rayDesktop) {
+        this.isDesktop = true;
+        try {
+          const base = await window.v2rayDesktop.getApiBase();
+          if (base) this.connectSocket(base);
+          window.v2rayDesktop.onBackendReady((base) => this.connectSocket(base));
+        } catch (e) {
+          this.processOutput += `\n[错误] 桌面端初始化失败: ${e.message}`;
+        }
       this.loadHistory();
       this.restoreLastServer();
       this.loadNodes();
@@ -266,8 +258,8 @@ export default {
       });
     },
     async deploy() {
-      if (!this.apiKey) {
-        alert(this.isDesktop ? "后端尚未就绪" : "请输入 API Key");
+      if (this.isDesktop && !this.apiBase) {
+        alert("后端尚未就绪");
         return;
       }
       if (!this.serverIp || !this.username) {
@@ -301,7 +293,6 @@ export default {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-API-Key": this.apiKey,
           },
           body: JSON.stringify(payload),
         });

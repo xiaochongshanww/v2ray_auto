@@ -2,7 +2,6 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('v2rayDesktop', {
   getApiBase: () => ipcRenderer.invoke('get-api-base'),
-  getApiKey: () => ipcRenderer.invoke('get-api-key'),
   onBackendReady: (callback) => {
     ipcRenderer.on('backend-ready', (_event, apiBase) => callback(apiBase))
   },

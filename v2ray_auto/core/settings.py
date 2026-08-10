@@ -13,8 +13,8 @@ except ImportError:  # pragma: no cover - optional during bootstrap
 
 @dataclass(frozen=True)
 class Settings:
-    api_key: str
-    allowed_origins: tuple[str, ...]
+    api_key: str = ""
+    allowed_origins: tuple[str, ...] = ()
     default_remote_dir: str = "/opt/v2ray_auto"
     command_timeout: int = 900
     log_level: str = "INFO"
@@ -23,6 +23,10 @@ class Settings:
     smtp_username: str | None = None
     smtp_password: str | None = None
     smtp_sender: str | None = None
+
+    @property
+    def auth_enabled(self) -> bool:
+        return bool(self.api_key)
 
     @property
     def email_enabled(self) -> bool:
@@ -38,8 +42,6 @@ def load_settings() -> Settings:
         load_dotenv()
 
     api_key = os.getenv("V2RAY_AUTO_API_KEY", "").strip()
-    if not api_key:
-        raise RuntimeError("V2RAY_AUTO_API_KEY is required")
 
     origins = _split_origins(os.getenv("V2RAY_AUTO_ALLOWED_ORIGINS", "http://localhost:8080"))
 

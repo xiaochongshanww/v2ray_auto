@@ -52,8 +52,8 @@ v2ray_auto.core.DeploymentService（纯 Python，SSH 直连远端 VPS）
 ```
 ┌─ Electron 应用 ──────────────────────────────┐
 │  Main Process                               │
-│   ├─ spawn 管理 Python 后端子进程             │
-│   ├─ 分配随机端口 + 生成内部 API Key          │
+│   ├─ spawn 管理 PyInstaller 后端二进制       │
+│   ├─ 分配随机端口（loopback-only，无 API Key）│
 │   └─ 生命周期守护（崩溃拉起/退出回收）        │
 │  Renderer（现有 Vue3 + Vite 构建物）         │
 │   └─ fetch http://127.0.0.1:<port>/api/deploy
@@ -78,7 +78,7 @@ v2ray_auto.core.DeploymentService（纯 Python，SSH 直连远端 VPS）
 - ✅ 代码复用率最高：后端零改动，前端基本零改动（仅改 API base URL）
 - ✅ 边界极薄且稳定：两端只通过 HTTP 通信，互不耦合，各自可独立升级
 - ✅ 生态成熟：该模式被大量桌面工具采用，坑都有现成解法
-- ✅ 安全可控：后端只绑 `127.0.0.1`，可加随机端口 + 内部 API Key 双保险
+- ✅ 安全可控：后端只绑 `127.0.0.1` + 随机端口；API Key 改为可选（桌面默认不启用）
 - ✅ 可并行保留 Web 方案：同一后端代码可继续发布 web 版
 
 **缺点 / 风险**
@@ -215,12 +215,12 @@ v2ray_auto.core.DeploymentService（纯 Python，SSH 直连远端 VPS）
 | P0.1 Electron spawn A2 后端 | ✅ `[backend] ready on http://127.0.0.1:<随机端口>` |
 | P0.2 健康检查 | ✅ `{"status":"ok"}` |
 | P0.2 部署接口链路 | ✅ `POST /api/deploy` 走通完整 `DeploymentService` 管线（对不可达主机返回明确 SSH 错误） |
-| P0.2 认证 | ✅ 无 `X-API-Key` → 401 |
+| P0.2 认证 | ✅ 桌面默认无 Key（loopback-only）；配置 `V2RAY_AUTO_API_KEY` 后无 `X-API-Key` → 401 |
 | P0.2 生命周期回收 | ✅ 关闭 Electron → 后端收到 SIGTERM → `shutting down` → 退出 code=0 |
 | 回归 | ✅ 37 个 Python 测试全部通过 |
 
 **过程中解决的坑**：
-1. `app.py` 模块级 `create_app()` 需 `V2RAY_AUTO_API_KEY` → launcher 在 import 前将桌面 Key 注入 `os.environ`
+1. `engineio` 的 async 驱动为动态导入 → PyInstaller 需 `--hidden-import engineio.async_drivers.threading` + `simple_websocket`
 2. Electron 二进制 GitHub 下载 TLS 失败 → 使用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`
 3. 旧 venv 污染 → A2 独立运行时内干净安装依赖
 
@@ -233,7 +233,7 @@ v2ray_auto.core.DeploymentService（纯 Python，SSH 直连远端 VPS）
 | 验证项 | 结果 |
 |---|---|
 | Vue 前端接入桌面 | ✅ Vite 构建产物（`base:'./'`）直接由 Electron `loadFile` 加载，双模式（桌面/web）共用同一份前端 |
-| 动态 API base | ✅ 桌面模式经 preload 注入 `apiBase` + 自动 API Key（`getApiBase`/`getApiKey`/`onBackendReady`），web 模式保持 `/` 相对路径 + 手动 Key |
+| 动态 API base | ✅ 桌面模式经 preload 注入 `apiBase`（`getApiBase`/`onBackendReady`），web 模式保持 `/` 相对路径；API Key 已从桌面端移除 |
 | 实时日志回流 | ✅ Socket.IO 连 `io(apiBase)`，`process_update` 事件正常渲染 |
 | 部署历史 | ✅ 主进程 `userData/history.json`（上限 200 条），preload 暴露 `history.list/add/clear`，UI 表格展示 |
 | 凭据加密 | ✅ `safeStorage` 加密存入 `credentials.json`（Keychain/DPAPI 底层），`credential.save/load/delete`，「记住密码」+ 自动回填上次服务器 |
@@ -241,7 +241,7 @@ v2ray_auto.core.DeploymentService（纯 Python，SSH 直连远端 VPS）
 | 生命周期 | ✅ 关闭 Electron → 后端 SIGTERM → 退出 code=0 |
 | 回归 | ✅ 37 个 Python 测试全部通过 |
 
-**关键实现**：`main.js` 主进程持有 `apiKey`（`startBackend()` 同步生成，先于渲染进程加载 → 无竞态）；后端就绪 JSON 解析后经 `backend-ready` 事件推送渲染进程重连 Socket；`sandbox: true` + `contextIsolation: true` 保持。
+**关键实现**：后端就绪 JSON 解析后经 `backend-ready` 事件推送渲染进程重连 Socket；`sandbox: true` + `contextIsolation: true` 保持。桌面端不再生成/传递 API Key——后端只绑 `127.0.0.1`，鉴权可选。
 
 ---
 

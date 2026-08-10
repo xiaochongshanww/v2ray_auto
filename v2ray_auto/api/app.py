@@ -49,6 +49,8 @@ def create_app(settings: Settings | None = None) -> tuple[Flask, SocketIO]:
         socketio.emit("process_update", {"message": message})
 
     def has_valid_key() -> bool:
+        if not settings.auth_enabled:
+            return True
         return request.headers.get("X-API-Key", "") == settings.api_key
 
     @app.get("/")

@@ -55,9 +55,16 @@ cp .env.example .env
 Required variables:
 
 ```bash
-V2RAY_AUTO_API_KEY=change-me
 V2RAY_AUTO_ALLOWED_ORIGINS=http://localhost:8080
 ```
+
+Optional:
+
+```bash
+V2RAY_AUTO_API_KEY=change-me
+```
+
+The API key is optional. When set, the `/api/deploy` endpoint requires the `X-API-Key` header. When empty (the desktop client's default), auth is skipped — this is safe for the loopback-only sidecar.
 
 ## Run API
 
@@ -76,7 +83,7 @@ Deploy endpoint:
 
 ```bash
 POST /api/deploy
-Header: X-API-Key: <your api key>
+Header: X-API-Key: <your api key>   # required only if V2RAY_AUTO_API_KEY is set
 ```
 
 Payload example:
@@ -138,6 +145,6 @@ python -m pytest
 
 Done since the rewrite started:
 
-- Vue frontend calls `/api/deploy` with `X-API-Key`.
+- Vue frontend calls `/api/deploy`; the desktop client no longer uses an API key.
 - Config hash comparison skips unnecessary service restarts.
 - Legacy `vue_web/Python_api/` backend and root helper scripts removed.

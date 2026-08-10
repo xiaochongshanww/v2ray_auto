@@ -6,4 +6,5 @@ renderer/
 .DS_Store
 backend/dist/
 backend/build/
+build/
 *.spec

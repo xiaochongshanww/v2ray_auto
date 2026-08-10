@@ -34,16 +34,12 @@ def find_free_port() -> int:
 
 
 def main() -> int:
-    api_key = os.environ.get("V2RAY_DESKTOP_API_KEY") or "local-poc-key"
     port = int(os.environ.get("V2RAY_DESKTOP_PORT") or "0") or find_free_port()
-
-    os.environ["V2RAY_AUTO_API_KEY"] = api_key
 
     from v2ray_auto.api.app import create_app
     from v2ray_auto.core.settings import Settings
 
     settings = Settings(
-        api_key=api_key,
         allowed_origins=("*",),
         default_remote_dir=os.environ.get("V2RAY_AUTO_DEFAULT_REMOTE_DIR", "/opt/v2ray_auto"),
         command_timeout=int(os.environ.get("V2RAY_AUTO_COMMAND_TIMEOUT", "900")),
