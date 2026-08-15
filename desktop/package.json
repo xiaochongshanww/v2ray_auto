@@ -16,10 +16,10 @@
     "setup:backend": "runtime/python3.13/bin/python3 -m pip install -q -r ../requirements.txt",
     "setup": "npm install && npm run build:renderer && npm run setup:backend",
     "build:backend": "runtime/python3.13/bin/python3 -m PyInstaller --onefile --name v2ray-backend --paths .. --hidden-import simple_websocket --hidden-import engineio.async_drivers.threading --distpath backend/dist --workpath build/pyi-work --specpath build/pyi-spec --clean backend/launcher.py",
-    "dist": "npm run build:renderer && npm run build:backend && electron-builder",
-    "dist:mac": "npm run build:renderer && cross-env-shell ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --mac",
-    "dist:win": "npm run build:renderer && cross-env-shell ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --win",
-    "dist:linux": "npm run build:renderer && cross-env-shell ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --linux"
+    "dist": "npm run build:renderer && npm run build:backend && electron-builder --publish never",
+    "dist:mac": "npm run build:renderer && cross-env-shell ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --mac --publish never",
+    "dist:win": "npm run build:renderer && cross-env-shell ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --win --publish never",
+    "dist:linux": "npm run build:renderer && cross-env-shell ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --linux --publish never"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
