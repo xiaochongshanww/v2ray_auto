@@ -116,6 +116,8 @@ jobs:
           path: artifacts
           merge-multiple: true
       - name: Generate release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           {
             echo "## 自动生成的变更日志"
