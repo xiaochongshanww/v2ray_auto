@@ -389,6 +389,13 @@ export default {
       return this.profile === 'vless-reality-vision' ? 'VLESS + REALITY + Vision' : 'VMess TCP'
     },
   },
+  watch: {
+    currentView(newView) {
+      if (newView === 'deploy' && this.result && this.result.clientUri) {
+        this.$nextTick(() => this.drawQR(this.result.clientUri))
+      }
+    },
+  },
   async mounted() {
     if (window.v2rayDesktop) {
       this.isDesktop = true
