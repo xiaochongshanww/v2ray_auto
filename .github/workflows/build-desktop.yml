@@ -19,7 +19,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m venv .venv
-          .venv/bin/python -m pip install -q -r requirements.txt pytest
+          .venv/bin/python -m pip install -q -r requirements.txt pytest ruff
+      - name: Lint with ruff
+        run: |
+          .venv/bin/ruff check v2ray_auto/ tests/
+          .venv/bin/ruff format --check v2ray_auto/ tests/
       - name: Run tests
         run: .venv/bin/python -m pytest -q
 
@@ -75,6 +79,10 @@ jobs:
       - name: Install frontend npm deps
         working-directory: vue_web/remote-server-config
         run: npm ci
+
+      - name: Lint frontend
+        working-directory: vue_web/remote-server-config
+        run: npm run lint
 
       - name: Build and package
         working-directory: desktop

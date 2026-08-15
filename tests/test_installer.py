@@ -1,5 +1,6 @@
 import pytest
 
+from v2ray_auto.core.errors import ConfigError, InstallFailedError
 from v2ray_auto.core.installer import Installer, package_bootstrap_command
 
 
@@ -16,7 +17,7 @@ def test_redhat_bootstrap_command():
 
 
 def test_unknown_bootstrap_command():
-    with pytest.raises(RuntimeError):
+    with pytest.raises(InstallFailedError):
         package_bootstrap_command("unknown")
 
 
@@ -33,7 +34,7 @@ def test_extract_reality_key_pair_new_format():
 
 
 def test_extract_private_key_raises_on_empty():
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ConfigError):
         Installer._extract_private_key("")
 
 

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, safeStorage, dialog, Tray, Menu } = require('electron')
+const { app, BrowserWindow, ipcMain, safeStorage, dialog, Tray, Menu, shell } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const { spawn } = require('node:child_process')
 const path = require('node:path')
@@ -9,6 +9,7 @@ let backend = null
 let mainWindow = null
 let tray = null
 let apiBase = null
+let backendReadyTimer = null
 
 function resourcesPath() {
   return app.isPackaged ? process.resourcesPath : __dirname
@@ -39,6 +40,42 @@ function writeJsonFile(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2))
 }
 
+function logsDir() {
+  return path.join(app.getPath('userData'), 'logs')
+}
+
+function readLogs(maxBytes = 200 * 1024) {
+  const dir = logsDir()
+  const files = fs.existsSync(dir)
+    ? fs.readdirSync(dir)
+        .filter((f) => f.startsWith('deploy.log'))
+        .sort()
+    : []
+  const current = path.join(dir, 'deploy.log')
+  if (fs.existsSync(current) && !files.includes('deploy.log')) files.push('deploy.log')
+  const selected = files.slice(-1)
+  const file = selected[0]
+  if (!file) return { file: null, content: '' }
+  const fullPath = path.join(dir, file)
+  try {
+    const stat = fs.statSync(fullPath)
+    const start = Math.max(0, stat.size - maxBytes)
+    const fd = fs.openSync(fullPath, 'r')
+    const buf = Buffer.alloc(stat.size - start)
+    fs.readSync(fd, buf, 0, buf.length, start)
+    fs.closeSync(fd)
+    return { file: file === 'deploy.log' ? 'deploy.log' : file, content: buf.toString('utf8') }
+  } catch {
+    return { file, content: '' }
+  }
+}
+
+function openLogsFolder() {
+  const dir = logsDir()
+  fs.mkdirSync(dir, { recursive: true })
+  shell.openPath(dir)
+}
+
 function listHistory() {
   return readJsonFile(userDataFile('history.json')) || []
 }
@@ -53,6 +90,14 @@ function addHistory(record) {
 function clearHistory() {
   writeJsonFile(userDataFile('history.json'), [])
   return []
+}
+
+function markHistoryUninstalled(id) {
+  const list = listHistory().map((record) =>
+    record.id === id ? { ...record, status: 'uninstalled' } : record
+  )
+  writeJsonFile(userDataFile('history.json'), list)
+  return list
 }
 
 function saveCredential(key, value) {
@@ -79,30 +124,6 @@ function deleteCredential(key) {
   const store = readJsonFile(userDataFile('credentials.json')) || {}
   delete store[key]
   writeJsonFile(userDataFile('credentials.json'), store)
-}
-
-function listNodes() {
-  return readJsonFile(userDataFile('nodes.json')) || []
-}
-
-function saveNodes(nodes) {
-  writeJsonFile(userDataFile('nodes.json'), nodes)
-  return nodes
-}
-
-function upsertNode(node) {
-  const nodes = listNodes()
-  const idx = nodes.findIndex((n) => n.id === node.id)
-  if (idx >= 0) {
-    nodes[idx] = { ...nodes[idx], ...node }
-  } else {
-    nodes.unshift({ ...node, id: crypto.randomUUID() })
-  }
-  return saveNodes(nodes)
-}
-
-function deleteNode(id) {
-  return saveNodes(listNodes().filter((n) => n.id !== id))
 }
 
 function backendBinaryPath() {
@@ -149,6 +170,17 @@ function startBackend() {
     stdio: ['ignore', 'pipe', 'pipe'],
   })
 
+  backendReadyTimer = setTimeout(() => {
+    if (!apiBase) {
+      process.stderr.write('[backend] startup timeout\n')
+      if (backend) backend.kill('SIGKILL')
+      if (!app.isQuitting) {
+        showBackendError('本地后端服务启动超时', '本地后端服务未能在 30 秒内就绪。')
+        app.quit()
+      }
+    }
+  }, 30000)
+
   backend.stdout.on('data', (chunk) => {
     const text = chunk.toString()
     for (const line of text.split('\n')) {
@@ -164,6 +196,7 @@ function startBackend() {
         apiBase = `http://127.0.0.1:${parsed.port}`
         process.stdout.write(`[backend] ready on ${apiBase}\n`)
         if (mainWindow) mainWindow.webContents.send('backend-ready', apiBase)
+        clearTimeout(backendReadyTimer)
       }
     }
   })
@@ -176,20 +209,39 @@ function startBackend() {
     process.stdout.write(`[backend] exited code=${code} signal=${signal}\n`)
     backend = null
     if (!app.isQuitting) {
+      if (!apiBase) {
+        showBackendError('本地后端服务启动失败', '无法启动本地后端服务，应用即将退出。')
+      }
       app.quit()
     }
   })
 
   backend.on('error', (err) => {
     process.stderr.write(`[backend] failed to spawn: ${err.message}\n`)
-    if (!app.isQuitting) app.quit()
+    if (!app.isQuitting) {
+      showBackendError('无法启动本地后端', `后端进程启动失败：${err.message}`)
+      app.quit()
+    }
+  })
+}
+
+function showBackendError(title, message) {
+  dialog.showMessageBox({
+    type: 'error',
+    title,
+    message,
+    buttons: ['确定'],
   })
 }
 
 function createWindow() {
+  const iconPath = process.platform === 'win32'
+    ? path.join(__dirname, 'assets', 'icon.ico')
+    : path.join(__dirname, 'assets', 'icon.png')
   mainWindow = new BrowserWindow({
     width: 960,
     height: 720,
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -233,7 +285,12 @@ function toggleWindow() {
 }
 
 function checkForUpdates() {
-  if (!app.isPackaged || process.env.V2RAY_DESKTOP_DISABLE_AUTOUPDATE) return
+  if (!app.isPackaged) {
+    process.stdout.write('[updater] check skipped: dev mode\n')
+    sendUpdateStatus({ state: 'not-available' })
+    return
+  }
+  if (process.env.V2RAY_DESKTOP_DISABLE_AUTOUPDATE) return
   autoUpdater.checkForUpdates().catch((err) => {
     process.stderr.write(`[updater] check failed: ${err.message}\n`)
   })
@@ -302,15 +359,22 @@ function setupAutoUpdater() {
   })
   autoUpdater.on('error', (err) => {
     process.stderr.write(`[updater] error: ${err.message}\n`)
+    if (isNoReleasesError(err)) {
+      sendUpdateStatus({ state: 'not-available' })
+      return
+    }
     sendUpdateStatus({ state: 'error', error: err.message })
   })
-  autoUpdater.checkForUpdatesAndNotify().catch((err) => {
-    process.stderr.write(`[updater] check failed: ${err.message}\n`)
-  })
+}
+
+function isNoReleasesError(err) {
+  const msg = String((err && err.message) || err).toLowerCase()
+  return msg.includes('no published versions') || msg.includes('latest version not found')
 }
 
 app.whenReady().then(() => {
   ipcMain.handle('get-api-base', () => apiBase)
+  ipcMain.handle('get-app-version', () => app.getVersion())
   ipcMain.handle('get-backend-path', () => {
     try {
       return backendInvocation().command
@@ -321,13 +385,13 @@ app.whenReady().then(() => {
   ipcMain.handle('history-list', () => listHistory())
   ipcMain.handle('history-add', (_event, record) => addHistory(record))
   ipcMain.handle('history-clear', () => clearHistory())
+  ipcMain.handle('history-mark-uninstalled', (_event, id) => markHistoryUninstalled(id))
   ipcMain.handle('credential-save', (_event, key, value) => saveCredential(key, value))
   ipcMain.handle('credential-load', (_event, key) => loadCredential(key))
   ipcMain.handle('credential-delete', (_event, key) => deleteCredential(key))
-  ipcMain.handle('nodes-list', () => listNodes())
-  ipcMain.handle('nodes-upsert', (_event, node) => upsertNode(node))
-  ipcMain.handle('nodes-delete', (_event, id) => deleteNode(id))
   ipcMain.handle('updater-check', () => checkForUpdates())
+  ipcMain.handle('logs-read', () => readLogs())
+  ipcMain.handle('logs-open-folder', () => openLogsFolder())
 
   createWindow()
   startBackend()

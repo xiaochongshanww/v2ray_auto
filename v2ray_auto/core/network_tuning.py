@@ -29,10 +29,7 @@ class NetworkTuning:
             return
 
         self.log("BBR available; enabling fq + bbr")
-        content = (
-            "net.core.default_qdisc=fq\n"
-            "net.ipv4.tcp_congestion_control=bbr\n"
-        )
+        content = "net.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n"
         remote_tmp = "/tmp/v2ray-auto-sysctl.conf"
         self.ssh.put_text(remote_tmp, content)
         self.ssh.run(f"mv {remote_tmp} {SYSCTL_FILE}", sudo=True)
@@ -74,7 +71,8 @@ class NetworkTuning:
                 f"-j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || "
                 f"iptables -t mangle -A {chain} -p tcp --tcp-flags SYN,RST SYN "
                 f"-j TCPMSS --clamp-mss-to-pmtu",
-                sudo=True, check=False,
+                sudo=True,
+                check=False,
             )
 
         self.ssh.run(

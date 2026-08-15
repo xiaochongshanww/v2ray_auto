@@ -1,71 +1,43 @@
 #!/usr/bin/env python3
-"""Generate a monochrome tray template icon (macOS) using only the stdlib.
+"""Generate macOS tray template icons from assets/tray.svg.
 
-Writes desktop/assets/trayTemplate.png: 32x32 black "V" on transparent.
+Writes desktop/assets/trayTemplate.png (32px) and
+trayTemplate@2x.png (64px). The SVG is rendered at high resolution via
+Electron/Chromium, then downsampled with LANCZOS so edges stay smooth
+(no jaggies) in the menu bar, including Retina displays.
 """
 
 from __future__ import annotations
 
-import struct
-import zlib
+import subprocess
+import sys
 from pathlib import Path
 
-SIZE = 32
-OUT = Path(__file__).resolve().parents[1] / "assets" / "trayTemplate.png"
+from PIL import Image
 
-BLACK = (0, 0, 0, 255)
-TRANSPARENT = (0, 0, 0, 0)
+ASSETS = Path(__file__).resolve().parents[1] / "assets"
+SRC = ASSETS / "tray.svg"
+TMP = ASSETS / ".tray_template_raw.png"
+OUT_1X = ASSETS / "trayTemplate.png"
+OUT_2X = ASSETS / "trayTemplate@2x.png"
+RENDER_SIZE = 256
+SIZES = {32: OUT_1X, 64: OUT_2X}
 
-
-def point_in_poly(x: float, y: float, poly) -> bool:
-    inside = False
-    n = len(poly)
-    j = n - 1
-    for i in range(n):
-        xi, yi = poly[i]
-        xj, yj = poly[j]
-        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
-            inside = not inside
-        j = i
-    return inside
-
-
-BAR1 = [(11, 5), (15, 5), (22, 27), (18, 27)]
-BAR2 = [(17, 5), (21, 5), (14, 27), (10, 27)]
-
-
-def pixel(x: int, y: int) -> tuple:
-    if point_in_poly(x + 0.5, y + 0.5, BAR1) or point_in_poly(x + 0.5, y + 0.5, BAR2):
-        return BLACK
-    return TRANSPARENT
-
-
-def chunk(tag: bytes, data: bytes) -> bytes:
-    return (
-        struct.pack(">I", len(data))
-        + tag
-        + data
-        + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
-    )
+ELECTRON = Path(__file__).resolve().parents[1] / "node_modules" / ".bin" / "electron"
 
 
 def main() -> None:
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    raw = bytearray()
-    for y in range(SIZE):
-        raw.append(0)
-        for x in range(SIZE):
-            raw.extend(pixel(x, y))
-    ihdr = struct.pack(">IIBBBBB", SIZE, SIZE, 8, 6, 0, 0, 0)
-    png = (
-        b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", ihdr)
-        + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
-        + chunk(b"IEND", b"")
+    subprocess.run(
+        [str(ELECTRON), str(Path(__file__).parent / "svg-to-png.js"), str(SRC), str(TMP), str(RENDER_SIZE)],
+        check=True,
+        cwd=str(ELECTRON.parents[1]),
     )
-    OUT.write_bytes(png)
-    print(f"wrote {OUT} ({OUT.stat().st_size} bytes)")
+    with Image.open(TMP).convert("RGBA") as img:
+        for size, out in SIZES.items():
+            img.resize((size, size), Image.LANCZOS).save(out)
+            print(f"wrote {out} ({size}x{size})")
+    TMP.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

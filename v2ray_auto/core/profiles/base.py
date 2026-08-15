@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from v2ray_auto.core.errors import ConfigError, UnsupportedProfileError
 from v2ray_auto.core.models import DeploymentRequest, GeneratedConfig
 
 from .vless_reality_vision import build_vless_reality_vision_config
@@ -18,7 +19,7 @@ def build_config_for_request(
 ) -> GeneratedConfig:
     if request.profile == "vless-reality-vision":
         if not reality_private_key or not reality_public_key:
-            raise ValueError("REALITY key pair is required for vless-reality-vision profile")
+            raise ConfigError("REALITY 密钥对缺失，无法生成配置", detail="REALITY key pair is required")
         return build_vless_reality_vision_config(
             server_host=request.host,
             listen_port=request.listen_port or 443,
@@ -31,4 +32,4 @@ def build_config_for_request(
         )
     if request.profile == "vmess-tcp-legacy":
         return build_vmess_tcp_legacy_config(server_host=request.host, listen_port=request.listen_port)
-    raise ValueError(f"unsupported profile: {request.profile}")
+    raise UnsupportedProfileError(detail=f"unsupported profile: {request.profile}")

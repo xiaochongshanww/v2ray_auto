@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from .errors import ConfigError, InstallFailedError
 from .models import CoreName, LinuxFamily, LogSink
 from .ssh import SSHExecutor
 
@@ -23,7 +24,7 @@ def package_bootstrap_command(family: LinuxFamily) -> str:
         return "apt-get update && apt-get install -y curl ca-certificates unzip"
     if family == "redhat":
         return "yum install -y curl ca-certificates unzip"
-    raise RuntimeError("unsupported linux family for automatic bootstrap")
+    raise InstallFailedError("不支持该 Linux 发行版的自动安装", detail=f"unsupported family: {family}")
 
 
 class Installer:
@@ -61,7 +62,10 @@ class Installer:
         self.install_core()
 
         if not self.has_service():
-            raise RuntimeError(f"{self.service_name} still not found after bootstrap install")
+            raise InstallFailedError(
+                "核心程序安装后未找到，请检查服务器网络能否访问安装脚本源",
+                detail=f"{self.service_name} still not found after bootstrap install",
+            )
 
     def has_service(self) -> bool:
         service = re.escape(self.service_name)
@@ -93,17 +97,21 @@ class Installer:
         self.ssh.run("chmod 600 /swapfile", sudo=True)
         self.ssh.run("mkswap /swapfile", sudo=True)
         self.ssh.run("swapon /swapfile", sudo=True)
-        self.ssh.run("grep -q '^/swapfile ' /etc/fstab || echo '/swapfile swap swap defaults 0 0' >> /etc/fstab", sudo=True)
+        self.ssh.run(
+            "grep -q '^/swapfile ' /etc/fstab || echo '/swapfile swap swap defaults 0 0' >> /etc/fstab", sudo=True
+        )
 
     def install_core(self) -> None:
         script_url = self.xray_install_script_url if self.core == "xray" else self.v2ray_install_script_url
         remote_script = f"/tmp/v2ray-auto-install-{self.binary_name}.sh"
-        self.ssh.run(f"curl --connect-timeout 10 --retry 3 --retry-delay 2 -fsSL {script_url} -o {remote_script}", sudo=True)
+        self.ssh.run(
+            f"curl --connect-timeout 10 --retry 3 --retry-delay 2 -fsSL {script_url} -o {remote_script}", sudo=True
+        )
         self.ssh.run(f"bash {remote_script}", sudo=True)
 
     def generate_reality_key_pair(self) -> RealityKeyPair:
         if self.core != "xray":
-            raise RuntimeError("REALITY key pair generation requires xray core")
+            raise ConfigError("生成 REALITY 密钥对需要 xray 核心", detail="requires xray core")
         result = self.ssh.run("xray x25519", sudo=True)
         private_key = self._extract_private_key(result.stdout)
         public_key = self._extract_public_key(result.stdout)
@@ -121,7 +129,7 @@ class Installer:
         lines = [line.strip() for line in output.splitlines() if line.strip()]
         if lines and not re.search(r":", lines[0]):
             return lines[0]
-        raise RuntimeError("failed to parse private key from xray output")
+        raise ConfigError("无法解析 xray 输出的私钥", detail="failed to parse private key")
 
     @staticmethod
     def _extract_public_key(output: str) -> str:
@@ -130,5 +138,5 @@ class Installer:
         #   "Public key: <key>" (old format)
         match = re.search(r"(?:Password \(PublicKey\)|Public key):\s*([A-Za-z0-9_-]+)", output)
         if not match:
-            raise RuntimeError("failed to parse public key from xray output")
+            raise ConfigError("无法解析 xray 输出的公钥", detail="failed to parse public key")
         return match.group(1)

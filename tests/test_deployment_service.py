@@ -27,8 +27,11 @@ def test_validate_profile_valid():
 
 def test_validate_profile_invalid():
     import pytest
+
+    from v2ray_auto.core.errors import UnsupportedProfileError
+
     service = DeploymentService(_settings())
-    with pytest.raises(ValueError, match="unsupported profile"):
+    with pytest.raises(UnsupportedProfileError, match="不支持的配置模板"):
         service._validate_profile("unknown-profile")
 
 

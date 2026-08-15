@@ -139,7 +139,6 @@ python -m pytest
 ## Remaining work
 
 - Clean sensitive values from Git history.
-- Decide whether to keep or remove the PyQt desktop client.
 - Finish full legacy VMess client URI generation.
 - Add more installer tests and failure recovery for partially bootstrapped servers.
 

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V2Ray Auto 客户端原型</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.9.0/dist/index.css" />
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/element-plus@2.9.0/dist/index.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@element-plus/icons-vue@2.3.1/dist/index.iife.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+            },
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'PingFang SC', 'Hiragino Sans GB', 'Segoe UI', 'Microsoft YaHei', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    :root {
+      --el-color-primary: #4f46e5;
+      --el-color-primary-light-3: #7c7bff;
+      --el-color-primary-light-5: #a5a4ff;
+      --el-color-primary-light-7: #cdcdff;
+      --el-color-primary-light-8: #e0e0ff;
+      --el-color-primary-light-9: #f0f0ff;
+      --el-color-primary-dark-2: #4338ca;
+      --el-border-radius-base: 8px;
+      --el-font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    }
+    html, body, #app { height: 100%; }
+    body { margin: 0; background: #f8fafc; }
+    .nav-item { border-radius: 10px; transition: all .15s ease; }
+    .nav-item:hover { background: #f1f5f9; }
+    .nav-item.active { background: #eef2ff; color: #4f46e5; font-weight: 600; }
+    .terminal {
+      background: #0f172a; color: #34d399; font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+      font-size: 13px; line-height: 1.7; border-radius: 10px; padding: 14px 16px; height: 280px; overflow-y: auto;
+    }
+    .terminal .dim { color: #64748b; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; }
+    .form-label { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block; }
+    .qrcode { background: #fff; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; display: inline-block; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="flex h-full">
+
+    <aside class="w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col" style="min-height:100%">
+      <div class="flex items-center gap-3 px-5 py-5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-lg font-bold shadow">V</div>
+        <div>
+          <div class="font-bold text-slate-800 leading-tight">V2Ray Auto</div>
+          <div class="text-[11px] text-slate-400 leading-tight">一键部署客户端</div>
+        </div>
+      </div>
+      <nav class="flex-1 px-3 space-y-1">
+        <div v-for="item in navItems" :key="item.key"
+             class="nav-item px-3 py-2.5 text-sm text-slate-600 cursor-pointer flex items-center gap-3"
+             :class="{ active: currentView === item.key }"
+             @click="currentView = item.key">
+          <el-icon :size="18"><component :is="item.icon" /></el-icon>
+          <span>{{ item.label }}</span>
+        </div>
+      </nav>
+      <div class="px-5 py-4 border-t border-slate-100">
+        <div class="flex items-center gap-2 text-xs text-slate-500 mb-3">
+          <span class="w-2 h-2 rounded-full" :class="backendOnline ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+          {{ backendOnline ? '后端已连接' : '后端未连接' }}
+        </div>
+        <div class="text-[11px] text-slate-400">v0.1.0 · arm64</div>
+      </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto">
+      <div class="max-w-6xl mx-auto px-8 py-8">
+
+        <!-- ================= 部署 ================= -->
+        <div v-if="currentView === 'deploy'">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h1 class="text-2xl font-bold text-slate-800">一键部署</h1>
+              <p class="text-sm text-slate-400 mt-1">连接服务器，自动安装 Xray 并生成客户端配置</p>
+            </div>
+            <el-tag v-if="backendOnline" type="success" effect="light" round>后端已连接 · 127.0.0.1:61940</el-tag>
+          </div>
+
+          <div class="grid grid-cols-12 gap-6">
+            <div class="card p-6 col-span-12 xl:col-span-4 xl:row-span-2">
+              <div class="flex items-center gap-2 mb-5">
+                <el-icon :size="16" color="#4f46e5"><Monitor /></el-icon>
+                <h2 class="font-semibold text-slate-700">服务器连接</h2>
+              </div>
+              <el-form label-position="top" size="large">
+                <el-form-item label="服务器 IP">
+                  <el-input v-model="serverIp" placeholder="例如 1.2.3.4" />
+                </el-form-item>
+                <div class="grid grid-cols-2 gap-3">
+                  <el-form-item label="SSH 端口">
+                    <el-input-number v-model="serverPort" :min="1" :max="65535" style="width:100%" />
+                  </el-form-item>
+                  <el-form-item label="监听端口">
+                    <el-input v-model="listenPort" placeholder="默认 443" />
+                  </el-form-item>
+                </div>
+                <el-form-item label="用户名">
+                  <el-input v-model="username" placeholder="root" />
+                </el-form-item>
+                <el-form-item label="密码">
+                  <el-input v-model="password" type="password" show-password placeholder="或使用已保存凭据" />
+                </el-form-item>
+                <el-checkbox v-model="rememberPassword" class="text-sm">本机加密保存密码</el-checkbox>
+              </el-form>
+            </div>
+
+            <div class="card p-6 flex items-center justify-between col-span-12 xl:col-span-8">
+              <div>
+                <div class="text-sm text-slate-500 mb-1">目标：{{ serverIp || '未填写' }}</div>
+                <div class="text-xs text-slate-400">SSH {{ username || 'root' }}@{{ serverIp || '?' }}:{{ serverPort }} · {{ profileLabel }}</div>
+              </div>
+              <el-button type="primary" size="large" :loading="deploying" @click="startDeploy" class="!px-10 !py-6 !text-base">
+                {{ deploying ? '部署中…' : '开始部署' }}
+              </el-button>
+            </div>
+
+            <div class="card col-span-12 xl:col-span-8">
+              <div class="flex items-center gap-2 px-6 pt-5 pb-4">
+                <el-icon :size="16" color="#4f46e5"><Document /></el-icon>
+                <h2 class="font-semibold text-slate-700">部署日志</h2>
+                <span v-if="deploying" class="text-xs text-brand-600 ml-auto">进行中…</span>
+                <span v-else-if="deployed" class="text-xs text-emerald-600 ml-auto">已完成</span>
+              </div>
+              <div class="px-6 pb-6">
+                <div class="terminal">
+                  <div v-for="(line, i) in logLines" :key="i">
+                    <span class="dim">$</span> <span v-html="line"></span>
+                  </div>
+                  <div v-if="deploying" class="dim">…</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card p-6 col-span-12 xl:col-span-4">
+              <div class="flex items-center gap-2 mb-5">
+                <el-icon :size="16" color="#4f46e5"><Setting /></el-icon>
+                <h2 class="font-semibold text-slate-700">部署配置</h2>
+              </div>
+              <el-form label-position="top" size="large">
+                <el-form-item label="配置模板">
+                  <el-select v-model="profile" style="width:100%">
+                    <el-option value="vless-reality-vision" label="VLESS + REALITY + Vision（默认）" />
+                    <el-option value="vmess-tcp-legacy" label="VMess TCP（旧版兼容）" />
+                  </el-select>
+                </el-form-item>
+                <template v-if="profile === 'vless-reality-vision'">
+                  <el-form-item label="REALITY ServerName">
+                    <el-input v-model="realityServerName" placeholder="www.microsoft.com" />
+                  </el-form-item>
+                  <el-form-item label="REALITY Dest">
+                    <el-input v-model="realityDest" placeholder="www.microsoft.com:443" />
+                  </el-form-item>
+                </template>
+                <el-form-item label="通知邮箱（可选）">
+                  <el-input v-model="email" placeholder="部署结果发送到此邮箱" />
+                </el-form-item>
+                <div class="flex items-center justify-between pt-1">
+                  <span class="form-label !mb-0">安装 Warp 加速</span>
+                  <el-switch v-model="installWarp" />
+                </div>
+              </el-form>
+            </div>
+
+            <div v-if="result" class="card p-6 col-span-12 xl:col-span-8">
+              <div class="flex items-center gap-2 mb-4">
+                <el-icon :size="18" color="#10b981"><SuccessFilled /></el-icon>
+                <h2 class="font-semibold text-slate-700 text-lg">部署成功</h2>
+              </div>
+              <div class="flex gap-6">
+                <div class="flex-1 space-y-2.5 text-sm">
+                  <div class="flex justify-between border-b border-slate-50 pb-2"><span class="text-slate-400">服务器</span><span class="font-medium text-slate-700">{{ result.server }}</span></div>
+                  <div class="flex justify-between border-b border-slate-50 pb-2"><span class="text-slate-400">端口</span><span class="font-medium text-slate-700">{{ result.port }}</span></div>
+                  <div class="flex justify-between border-b border-slate-50 pb-2"><span class="text-slate-400">核心</span><span class="font-medium text-slate-700">{{ result.core }}</span></div>
+                  <div class="flex justify-between border-b border-slate-50 pb-2"><span class="text-slate-400">UUID</span><span class="font-mono text-xs text-slate-700 break-all">{{ result.uuid }}</span></div>
+                  <div class="pt-2">
+                    <div class="text-xs text-slate-400 mb-1.5">客户端 URI</div>
+                    <div class="bg-slate-50 rounded-lg px-3 py-2 font-mono text-xs text-slate-600 break-all border border-slate-200">{{ result.clientUri }}</div>
+                    <div class="flex gap-2 mt-3">
+                      <el-button type="primary" size="small" @click="copyUri">复制 URI</el-button>
+                      <el-button size="small" @click="resetDeploy">重新部署</el-button>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex flex-col items-center justify-center shrink-0">
+                  <div class="qrcode">
+                    <canvas id="qrCanvas" width="128" height="128"></canvas>
+                  </div>
+                  <div class="text-[11px] text-slate-400 mt-2">扫码连接（示意）</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= 部署历史 ================= -->
+        <div v-if="currentView === 'history'">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h1 class="text-2xl font-bold text-slate-800">部署历史</h1>
+              <p class="text-sm text-slate-400 mt-1">最近 {{ history.length }} 次部署记录</p>
+            </div>
+            <el-popconfirm title="确认清空全部历史？" @confirm="clearHistory">
+              <template #reference><el-button type="danger" plain>清空历史</el-button></template>
+            </el-popconfirm>
+          </div>
+          <div class="card">
+            <el-table :data="history" style="width:100%">
+              <el-table-column prop="time" label="时间" min-width="170" />
+              <el-table-column prop="server" label="服务器" min-width="150" />
+              <el-table-column label="模板" min-width="160">
+                <template #default="{ row }">{{ profileName(row.profile) }}</template>
+              </el-table-column>
+              <el-table-column label="状态" width="110" align="center">
+                <template #default="{ row }">
+                  <el-tag v-if="row.status === 'ok'" type="success" effect="light" round>成功</el-tag>
+                  <el-tag v-else type="danger" effect="light" round>失败</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="客户端 URI" min-width="260">
+                <template #default="{ row }">
+                  <div v-if="row.clientUri" class="font-mono text-xs text-slate-500 truncate max-w-56">{{ row.clientUri }}</div>
+                  <span v-else class="text-slate-300">—</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+
+        <!-- ================= 设置 ================= -->
+        <div v-if="currentView === 'settings'">
+          <h1 class="text-2xl font-bold text-slate-800 mb-6">设置</h1>
+          <div class="max-w-2xl space-y-6">
+            <div class="card p-6">
+              <h2 class="font-semibold text-slate-700 mb-4">更新</h2>
+              <div class="flex items-center justify-between">
+                <div class="text-sm text-slate-500">自动检查 GitHub Release 更新</div>
+                <el-button size="small" @click="checkUpdate">检查更新</el-button>
+              </div>
+              <div class="text-xs text-slate-400 mt-3">v0.1.0（当前）</div>
+            </div>
+            <div class="card p-6">
+              <h2 class="font-semibold text-slate-700 mb-4">关于</h2>
+              <div class="space-y-2 text-sm text-slate-500">
+                <div class="flex justify-between"><span class="text-slate-400">后端地址</span><span class="font-mono text-xs">127.0.0.1:61940</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">后端进程</span><span class="font-mono text-xs">v2ray-backend (PyInstaller)</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">日志目录</span><span class="font-mono text-xs">~/Library/Logs/v2ray_auto</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  </el-dialog>
+</div>
+
+<script>
+const { createApp } = Vue
+const app = createApp({
+  data() {
+    return {
+      currentView: 'deploy',
+      navItems: [
+        { key: 'deploy', label: '一键部署', icon: 'Promotion' },
+        { key: 'history', label: '部署历史', icon: 'Clock' },
+        { key: 'settings', label: '设置', icon: 'Setting' },
+      ],
+      backendOnline: true,
+      serverIp: '139.162.22.11',
+      serverPort: 22,
+      listenPort: '',
+      username: 'root',
+      password: '',
+      rememberPassword: true,
+      email: '',
+      profile: 'vless-reality-vision',
+      realityServerName: 'www.microsoft.com',
+      realityDest: 'www.microsoft.com:443',
+      installWarp: false,
+      deploying: false,
+      deployed: false,
+      logLines: [],
+      result: null,
+      logTimer: null,
+      history: [
+        { id: 1, time: '2026-08-10 14:22:01', server: '139.162.22.11', profile: 'vless-reality-vision', status: 'ok', clientUri: 'vless://00f7a6a2-...@139.162.22.11:443?...' },
+        { id: 2, time: '2026-08-09 20:05:13', server: '146.190.60.20', profile: 'vmess-tcp-legacy', status: 'error', clientUri: '' },
+      ],
+      fakeLog: [
+        '连接 <span class="text-emerald-400">139.162.22.11:22</span> (SSH) …',
+        '检测系统版本：<span class="text-emerald-400">Ubuntu 22.04 LTS</span>',
+        '安装 <span class="text-emerald-400">xray-core</span> 最新稳定版 …',
+        '写入配置 <span class="text-emerald-400">/usr/local/etc/xray/config.json</span>',
+        '生成 VLESS + REALITY 密钥对',
+        '应用网络调优（<span class="text-emerald-400">BBR · PMTU 探测 · MSS 钳制</span>）',
+        '启用并重启 <span class="text-emerald-400">xray.service</span> …',
+        '放行防火墙端口 <span class="text-emerald-400">443</span>',
+        '校验连接 <span class="text-emerald-400">✓ 服务已就绪</span>',
+        '生成客户端 URI …',
+      ],
+    }
+  },
+  computed: {
+    profileLabel() {
+      return this.profile === 'vless-reality-vision' ? 'VLESS + REALITY + Vision' : 'VMess TCP'
+    },
+  },
+  methods: {
+    profileName(key) {
+      return key === 'vless-reality-vision' ? 'VLESS + REALITY + Vision' : 'VMess TCP'
+    },
+    startDeploy() {
+      if (!this.serverIp || !this.username) {
+        ElMessage.warning('请先填写服务器 IP 和用户名')
+        return
+      }
+      this.deploying = true
+      this.deployed = false
+      this.result = null
+      this.logLines = []
+      let i = 0
+      this.logTimer = setInterval(() => {
+        if (i < this.fakeLog.length) {
+          this.logLines.push(this.fakeLog[i++])
+        } else {
+          clearInterval(this.logTimer)
+          this.finishDeploy()
+        }
+      }, 350)
+    },
+    finishDeploy() {
+      this.deploying = false
+      this.deployed = true
+      this.result = {
+        server: this.serverIp,
+        port: 443,
+        core: 'xray',
+        profile: this.profile,
+        uuid: '00f7a6a2-7b1c-4d8e-9f2a-3c5b6a7d8e9f',
+        clientUri: `vless://00f7a6a2-7b1c-4d8e-9f2a-3c5b6a7d8e9f@${this.serverIp}:443?encryption=none&security=reality&sni=www.microsoft.com&fp=chrome&pbk=K8Y4qZYc9Hj2XwL0PqR7mNv3TsU5bDfE&sid=a1b2c3d4#V2Ray-Auto`,
+      }
+      this.$nextTick(() => this.drawFakeQR(this.result.clientUri))
+      ElMessage.success('部署成功')
+    },
+    copyUri() {
+      if (navigator.clipboard) navigator.clipboard.writeText(this.result.clientUri)
+      ElMessage.success('已复制到剪贴板')
+    },
+    resetDeploy() {
+      this.result = null
+      this.deployed = false
+      this.logLines = []
+    },
+    drawFakeQR(text) {
+      const canvas = document.getElementById('qrCanvas')
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      const size = 128, n = 21
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, size, size)
+      let seed = 0
+      for (let i = 0; i < text.length; i++) seed = (seed * 31 + text.charCodeAt(i)) >>> 0
+      const rand = () => { seed = (seed * 1103515245 + 12345) >>> 0; return seed / 4294967296 }
+      const cell = size / (n + 4)
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          const inFinder = (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7)
+          if (inFinder) continue
+          if (rand() > 0.5) ctx.fillRect((c + 2) * cell, (r + 2) * cell, cell, cell)
+        }
+      }
+      ctx.fillStyle = '#000'
+      const drawFinder = (x, y) => {
+        ctx.fillRect(x * cell, y * cell, 7 * cell, 7 * cell)
+        ctx.fillStyle = '#fff'
+        ctx.fillRect((x + 1) * cell, (y + 1) * cell, 5 * cell, 5 * cell)
+        ctx.fillStyle = '#000'
+        ctx.fillRect((x + 2) * cell, (y + 2) * cell, 3 * cell, 3 * cell)
+      }
+      drawFinder(0, 0)
+      drawFinder(n - 7, 0)
+      drawFinder(0, n - 7)
+    },
+    clearHistory() {
+      this.history = []
+      ElMessage.success('历史已清空')
+    },
+    checkUpdate() {
+      ElMessage.info('已是最新版本 v0.1.0')
+    },
+  },
+  mounted() {
+    this.drawFakeQR('vless://demo@127.0.0.1:443?demo#prototype')
+  },
+})
+for (const [name, comp] of Object.entries(ElementPlusIconsVue)) {
+  app.component(name, comp)
+}
+const ElMessage = ElementPlus.ElMessage
+app.use(ElementPlus).mount('#app')
+</script>
+</body>
+</html>

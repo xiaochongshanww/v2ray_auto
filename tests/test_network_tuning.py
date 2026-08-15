@@ -1,6 +1,6 @@
 """Tests for network tuning module."""
 
-from v2ray_auto.core.network_tuning import NetworkTuning, SYSCTL_FILE
+from v2ray_auto.core.network_tuning import SYSCTL_FILE
 
 
 def test_sysctl_file_path():

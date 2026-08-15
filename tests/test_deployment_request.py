@@ -42,15 +42,11 @@ def test_missing_credentials():
 
 def test_listen_port_validation():
     with pytest.raises(ValueError):
-        DeploymentRequest(
-            host="203.0.113.10", port=22, username="root", password="pw", listen_port=99999
-        ).validate()
+        DeploymentRequest(host="203.0.113.10", port=22, username="root", password="pw", listen_port=99999).validate()
 
 
 def test_valid_listen_port():
-    request = DeploymentRequest(
-        host="203.0.113.10", port=22, username="root", password="pw", listen_port=443
-    )
+    request = DeploymentRequest(host="203.0.113.10", port=22, username="root", password="pw", listen_port=443)
     request.validate()  # should not raise
 
 

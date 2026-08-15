@@ -1,12 +1,13 @@
 import pytest
 
+from v2ray_auto.core.errors import ConfigError
 from v2ray_auto.core.models import DeploymentRequest
 from v2ray_auto.core.profiles import build_config_for_request
 
 
 def test_vless_profile_requires_reality_keys():
     request = DeploymentRequest(host="203.0.113.10", port=22, username="root", password="pw")
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigError):
         build_config_for_request(request)
 
 
@@ -34,7 +35,9 @@ def test_legacy_profile_dispatches():
     assert generated.client_uri.startswith("vmess://")
     # client_uri is a base64-encoded JSON; verify it decodes properly
     encoded = generated.client_uri.removeprefix("vmess://")
-    import base64, json
+    import base64
+    import json
+
     decoded = json.loads(base64.b64decode(encoded))
     assert decoded["add"] == "203.0.113.10"
     assert decoded["port"] == "23456"
