@@ -108,7 +108,6 @@ curl http://127.0.0.1:5000/health
 | `V2RAY_AUTO_DEFAULT_REMOTE_DIR` | 远端工作目录 | `/opt/v2ray_auto` |
 | `V2RAY_AUTO_COMMAND_TIMEOUT` | 远端命令超时（秒） | `900` |
 | `V2RAY_AUTO_LOG_LEVEL` | 日志级别 | `INFO` |
-| `V2RAY_AUTO_SMTP_*` | 部署结果邮件通知（可选） | 空 |
 
 ## 测试
 

@@ -139,7 +139,6 @@ def create_app(settings: Settings | None = None) -> tuple[Flask, SocketIO]:
                 username=payload.get("username"),
                 password=payload.get("password"),
                 private_key_path=payload.get("privateKeyPath") or payload.get("private_key_path"),
-                email=payload.get("email"),
                 remote_dir=payload.get("remoteDir") or settings.default_remote_dir,
                 install_warp=bool(payload.get("installWarp", False)),
                 profile=payload.get("profile") or "vless-reality-vision",

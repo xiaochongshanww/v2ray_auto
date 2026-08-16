@@ -116,9 +116,6 @@
                       <el-input v-model="realityDest" placeholder="www.apple.com:443" />
                     </el-form-item>
                   </template>
-                  <el-form-item label="通知邮箱（可选）">
-                    <el-input v-model="email" placeholder="部署结果发送到此邮箱" />
-                  </el-form-item>
                   <div class="flex items-center justify-between pt-1">
                     <span class="form-label !mb-0">安装 Warp 加速</span>
                     <el-switch v-model="installWarp" />
@@ -355,7 +352,6 @@ export default {
       listenPort: '',
       username: '',
       password: '',
-      email: '',
       profile: 'vless-reality-vision',
       realityServerName: 'www.apple.com',
       realityDest: 'www.apple.com:443',
@@ -507,7 +503,6 @@ export default {
         serverPort: parseInt(this.serverPort),
         username: this.username,
         password: this.password || undefined,
-        email: this.email || undefined,
         profile: this.profile,
         installWarp: this.installWarp,
       }

@@ -20,7 +20,6 @@ class DeploymentRequest:
     username: str
     password: str | None = None
     private_key_path: str | None = None
-    email: str | None = None
     remote_dir: str = "/opt/v2ray_auto"
     install_warp: bool = False
     profile: ProfileName = "vless-reality-vision"
