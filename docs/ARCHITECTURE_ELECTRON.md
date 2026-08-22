@@ -1,6 +1,6 @@
 # Electron 桌面客户端架构选型方案
 
-> 状态：架构定稿；M0 PoC 通过；M1 MVP 完成；M2 打包分发完成；M3 增强完成
+> 状态：架构定稿；M0 PoC 通过；M1 MVP 完成；M2 打包分发完成；M3 增强完成；M4 发布上线（v0.1.0）
 > 日期：2026-08-09
 > 范围：将当前"Web 部署式"的 v2ray 自动化工具改造为跨平台桌面客户端的架构决策
 
@@ -307,14 +307,14 @@ v2ray_auto.core.DeploymentService（纯 Python，SSH 直连远端 VPS）
 | M1 MVP | 功能对齐 Web 前端 + 部署历史 + 凭据安全 | 37 测试回归通过 |
 | M2 打包分发 | electron-builder 三平台 + CI 矩阵 + 签名 + 自动更新 | 可下载安装包（本机 mac 已产出；win/linux 由 CI 矩阵产出） |
 | M3 增强 | 多节点、托盘、自动更新细节 | 生产可用（✅ 已达成） |
-| M4 展望 | 打包产物 CI 跑通、正式签名公证、发布流程验证 | 首个对外发布 |
+| M4 发布 | CI 矩阵跑通（ruff/pytest/eslint 门禁）、发布流程验证、三平台产物 + `latest*.yml`/blockmap 更新元数据、Release notes 与安装指引自动挂载 | ✅ 已达成（v0.1.0 经 CI 发布 GitHub Release） |
 
 ---
 
 ## 9. 决策记录
 
 - **日期**：2026-08-09
-- **状态**：✅ 架构定稿（Sidecar HTTP 模式）；✅ A2 承载方式定稿；✅ M1 MVP；✅ M2 打包分发；✅ M3 增强（多节点/托盘/自动更新细节）
+- **状态**：✅ 架构定稿（Sidecar HTTP 模式）；✅ A2 承载方式定稿；✅ M1 MVP；✅ M2 打包分发；✅ M3 增强（多节点/托盘/自动更新细节）；✅ M4 发布（v0.1.0 已发布）
 - **已确认决策**：
   1. 整体采用方案 A（Electron + Python 后端子进程 + 本地 HTTP API）
   2. **A2 定稿**：python-build-standalone + 源码/依赖运行（M0 PoC 通过）；A1（PyInstaller）降为 M2 可选对比
@@ -324,6 +324,7 @@ v2ray_auto.core.DeploymentService（纯 Python，SSH 直连远端 VPS）
   6. **分发渠道定稿**（M2）：GitHub Releases + electron-updater；CI 三平台矩阵 + tag 自动发布
   7. **签名策略定稿**（M2）：无证书自动跳过；公证/签名按证书可用性开关
   8. **多节点定稿**（M3）：`userData/nodes.json` 节点库 + localStorage 记忆当前节点；密码仍按节点走 `safeStorage`
-- **待定**：正式发布需 CI 三平台产物跑通 + 真实签名/公证证书
-- **下一步**：M4（发布流程）：push 后 CI 矩阵构建 win/linux 产物、配置签名/公证、打 tag 走 Release
+  > 注：多节点 / 地址簿能力已由后续产品决策移除（`nodes.*` IPC 下线），仅保留 safeStorage 单节点凭据自动回填；详见 ROADMAP §1.2
+- **待定**：真实签名 / 公证证书（当前为未签名分发，macOS 需解除 quarantine，Windows 需放行 SmartScreen）
+- **下一步**：无（发布闭环已达成）；后续演进见 ROADMAP（P2 协议扩展 / 订阅聚合）
 - **关联文档**：`docs/CONFIG_AND_SPEED_OPTIMIZATION.md`、`README.md`

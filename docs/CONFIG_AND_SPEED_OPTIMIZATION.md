@@ -138,8 +138,6 @@ Mux 不作为吞吐提速手段，只允许后续作为客户端高级选项。
 
 1. 合并 bootstrap shell，减少 SSH 往返。
 2. 支持镜像源策略：`default` / `china`。
-3. 失败恢复：安装失败、配置失败、服务启动失败分别输出明确阶段。
-4. 配置 hash 持久化，减少重新生成 REALITY key 导致的重复变更。
 
 ## 实施状态
 
@@ -153,12 +151,10 @@ Mux 不作为吞吐提速手段，只允许后续作为客户端高级选项。
 - 配置 hash 比对与无变更跳过重启。
 - 端口占用检测。
 - README 更新默认架构。
-
-### 进行中
-
-- VMess TCP legacy profile 保留兼容，但完整客户端 URI 仍待补齐。
-- 安装失败恢复和阶段化错误仍待细化。
-- 前端支持 profile 选择仍待实现。
+- VMess TCP legacy 完整客户端 URI 已补齐（`vmess.py` 生成可导入 URI）。
+- 前端支持 profile 选择（VLESS / VMess 下拉切换 + REALITY 参数输入）。
+- 安装失败恢复与阶段化错误：结构化异常体系（连接/认证/端口占用/安装/服务/配置各自分类，统一 `{code,message,detail}` 中文排查指引），未知异常降级为 500 不泄漏堆栈。
+- 配置 hash 持久化：REALITY 密钥对 / client_id / short_id 经远端 `state.json` 持久化复用，重复部署不重新生成。
 
 ### 后续
 
