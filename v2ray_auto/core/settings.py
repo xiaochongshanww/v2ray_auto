@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from .installer import DEFAULT_XRAY_VERSION
+
 try:
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover - optional during bootstrap
@@ -18,6 +20,7 @@ class Settings:
     default_remote_dir: str = "/opt/v2ray_auto"
     command_timeout: int = 900
     log_level: str = "INFO"
+    xray_version: str = DEFAULT_XRAY_VERSION
 
     @property
     def auth_enabled(self) -> bool:
@@ -42,4 +45,5 @@ def load_settings() -> Settings:
         default_remote_dir=os.getenv("V2RAY_AUTO_DEFAULT_REMOTE_DIR", "/opt/v2ray_auto"),
         command_timeout=int(os.getenv("V2RAY_AUTO_COMMAND_TIMEOUT", "900")),
         log_level=os.getenv("V2RAY_AUTO_LOG_LEVEL", "INFO"),
+        xray_version=os.getenv("V2RAY_AUTO_XRAY_VERSION", DEFAULT_XRAY_VERSION).strip() or "latest",
     )

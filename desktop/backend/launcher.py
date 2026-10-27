@@ -50,12 +50,14 @@ def main() -> int:
     preferred = int(os.environ.get("V2RAY_DESKTOP_PORT") or "0")
 
     from v2ray_auto.api.app import create_app
+    from v2ray_auto.core.installer import DEFAULT_XRAY_VERSION
     from v2ray_auto.core.settings import Settings
 
     settings = Settings(
         allowed_origins=("*",),
         default_remote_dir=os.environ.get("V2RAY_AUTO_DEFAULT_REMOTE_DIR", "/opt/v2ray_auto"),
         command_timeout=int(os.environ.get("V2RAY_AUTO_COMMAND_TIMEOUT", "900")),
+        xray_version=os.environ.get("V2RAY_AUTO_XRAY_VERSION", DEFAULT_XRAY_VERSION),
     )
     app, socketio = create_app(settings)
 

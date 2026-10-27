@@ -284,7 +284,7 @@ class DeploymentService:
                 capture(f"detected linux distribution: {distro_id} ({family})")
 
                 core = self._core_for_profile(request.profile)
-                installer = Installer(ssh, core=core, log=capture)
+                installer = Installer(ssh, core=core, core_version=self.settings.xray_version, log=capture)
                 installer.ensure_installed(family)
                 tuning = NetworkTuning(ssh, log=capture)
                 tuning.enable_bbr_if_available()

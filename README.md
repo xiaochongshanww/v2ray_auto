@@ -108,6 +108,20 @@ curl http://127.0.0.1:5000/health
 | `V2RAY_AUTO_DEFAULT_REMOTE_DIR` | 远端工作目录 | `/opt/v2ray_auto` |
 | `V2RAY_AUTO_COMMAND_TIMEOUT` | 远端命令超时（秒） | `900` |
 | `V2RAY_AUTO_LOG_LEVEL` | 日志级别 | `INFO` |
+| `V2RAY_AUTO_XRAY_VERSION` | bootstrap 安装的 Xray 版本，`latest` 表示不锁定 | `v25.9.11` |
+
+### 客户端兼容性（为什么要锁定 Xray 版本）
+
+Xray v26.x 重构了 REALITY 握手。基于旧实现的客户端（Shadowrocket ≤ 2.2.32、Xray-core ≤ v1.8.x）无法完成认证：握手会静默回落到 REALITY 目标站点，客户端显示"已连接"但所有流量不通，服务端日志里也看不到任何 `accepted` 记录。
+
+因此 bootstrap 默认安装 `v25.9.11`（实测新旧客户端都能通过认证）。如需最新特性，可设 `V2RAY_AUTO_XRAY_VERSION=latest`，但请先确认客户端内核较新；v2rayN（内置最新 Xray-core）不受此限制。
+
+已经用过旧版本的服务器不会被自动降级（检测到 `xray.service` 存在就跳过 bootstrap）。这类机器手动降级一次即可：
+
+```bash
+curl -fsSL https://github.com/XTLS/Xray-install/raw/main/install-release.sh -o /tmp/x.sh
+bash /tmp/x.sh install --version v25.9.11 && systemctl restart xray
+```
 
 ## 测试
 

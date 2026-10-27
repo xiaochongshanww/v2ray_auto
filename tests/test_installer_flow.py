@@ -2,8 +2,8 @@
 
 import pytest
 
-from v2ray_auto.core.errors import InstallFailedError, RemoteCommandError
-from v2ray_auto.core.installer import Installer
+from v2ray_auto.core.errors import ConfigError, InstallFailedError, RemoteCommandError
+from v2ray_auto.core.installer import DEFAULT_XRAY_VERSION, Installer
 
 
 class _Result:
@@ -111,3 +111,44 @@ def test_install_core_uses_configured_script_url():
     installer = Installer(ssh, log=ssh.log, xray_install_script_url="https://example.test/xray.sh")
     installer.ensure_installed("debian")
     assert any("https://example.test/xray.sh" in cmd for cmd in ssh.commands)
+
+
+def test_pinned_version_defaults_to_compat_release():
+    installer = Installer(None)  # type: ignore[arg-type]
+    assert installer.pinned_version == DEFAULT_XRAY_VERSION
+
+
+def test_install_command_passes_version_flag():
+    installer = Installer(None)  # type: ignore[arg-type]
+    command = installer._install_command("/tmp/x.sh")
+    assert command == f"bash /tmp/x.sh install --version {DEFAULT_XRAY_VERSION}"
+
+
+def test_latest_version_disables_pin():
+    installer = Installer(None, core_version="latest")  # type: ignore[arg-type]
+    assert installer.pinned_version is None
+    assert installer._install_command("/tmp/x.sh") == "bash /tmp/x.sh"
+
+
+def test_version_without_prefix_is_normalised():
+    installer = Installer(None, core="xray", core_version="25.3.6")  # type: ignore[arg-type]
+    assert installer.pinned_version == "v25.3.6"
+
+
+def test_invalid_version_is_rejected():
+    installer = Installer(None, core_version="v1.0.0; rm -rf /")  # type: ignore[arg-type]
+    with pytest.raises(ConfigError):
+        _ = installer.pinned_version
+
+
+def test_v2ray_core_is_never_pinned():
+    installer = Installer(None, core="v2ray")  # type: ignore[arg-type]
+    assert installer.pinned_version is None
+
+
+def test_bootstrap_install_uses_pinned_version():
+    ssh = _FakeSSH(has_service=False)
+    installer = Installer(ssh, log=ssh.log)
+    installer.ensure_installed("debian")
+    assert any(f"install --version {DEFAULT_XRAY_VERSION}" in cmd for cmd in ssh.commands)
+    assert any("pinned" in line for line in ssh.logged)

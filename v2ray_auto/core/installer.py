@@ -12,6 +12,17 @@ from .ssh import SSHExecutor
 DEFAULT_XRAY_INSTALL_SCRIPT_URL = "https://github.com/XTLS/Xray-install/raw/main/install-release.sh"
 DEFAULT_V2RAY_INSTALL_SCRIPT_URL = "https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh"
 
+# Xray restructured REALITY in v26.x. Clients built on the older handshake
+# (Shadowrocket <= 2.2.32, Xray-core <= v1.8.x) can no longer authenticate
+# against a v26 server: the handshake silently falls back to the REALITY
+# target, so the client reports "connected" while every proxied request dies.
+# v25.9.11 is the newest release verified to work with both old and new
+# clients, so bootstrap installs pin it by default.
+# Override with V2RAY_AUTO_XRAY_VERSION (use "latest" to stop pinning).
+DEFAULT_XRAY_VERSION = "v25.9.11"
+
+_PINNED_VERSION_RE = re.compile(r"^v?\d+(?:\.\d+){1,3}$")
+
 
 @dataclass(frozen=True)
 class RealityKeyPair:
@@ -35,13 +46,27 @@ class Installer:
         core: CoreName = "xray",
         xray_install_script_url: str = DEFAULT_XRAY_INSTALL_SCRIPT_URL,
         v2ray_install_script_url: str = DEFAULT_V2RAY_INSTALL_SCRIPT_URL,
+        core_version: str | None = DEFAULT_XRAY_VERSION,
         log: LogSink | None = None,
     ):
         self.ssh = ssh
         self.core = core
         self.xray_install_script_url = xray_install_script_url
         self.v2ray_install_script_url = v2ray_install_script_url
+        self.core_version = core_version
         self.log = log or (lambda message: None)
+
+    @property
+    def pinned_version(self) -> str | None:
+        """Version to install, or None to let the install script pick latest."""
+        if self.core != "xray":
+            return None
+        version = (self.core_version or "").strip()
+        if not version or version.lower() == "latest":
+            return None
+        if not _PINNED_VERSION_RE.match(version):
+            raise ConfigError("核心版本号格式不正确", detail=f"invalid xray version: {version!r}")
+        return version if version.startswith("v") else f"v{version}"
 
     @property
     def service_name(self) -> str:
@@ -107,7 +132,17 @@ class Installer:
         self.ssh.run(
             f"curl --connect-timeout 10 --retry 3 --retry-delay 2 -fsSL {script_url} -o {remote_script}", sudo=True
         )
-        self.ssh.run(f"bash {remote_script}", sudo=True)
+        self.ssh.run(self._install_command(remote_script), sudo=True)
+
+    def _install_command(self, remote_script: str) -> str:
+        version = self.pinned_version
+        if version is None:
+            return f"bash {remote_script}"
+        self.log(
+            f"installing {self.binary_name} {version} "
+            "(pinned: Xray v26+ REALITY rejects older clients such as Shadowrocket <= 2.2.32)"
+        )
+        return f"bash {remote_script} install --version {version}"
 
     def generate_reality_key_pair(self) -> RealityKeyPair:
         if self.core != "xray":
