@@ -48,6 +48,18 @@ def test_extract_private_key_actual_xray_output():
     assert Installer._extract_public_key(output) == "eeIxe2i78ibj9RznsbiO_f-gUEd9vSc5KKCIoFNdJEE"
 
 
+def test_extract_keys_v25_9_bare_password_label():
+    # Xray v25.9.11 prints the public key line as a bare "Password:" label
+    # (no "(PublicKey)" suffix), which previously failed to parse.
+    output = (
+        "PrivateKey: 8IuqeKgABC1xsvUD_5PbQBB5uX4tIVmGR5M0bgYf3mg\n"
+        "Password: rZgk4P_s1eZh1J7HjYb_WL58BYxJL6rvN_iujKtr4io\n"
+        "Hash32: zwYC96POcLssAVYDYqgHovwLM2u9LZBaJMHMIvUlFHo\n"
+    )
+    assert Installer._extract_private_key(output) == "8IuqeKgABC1xsvUD_5PbQBB5uX4tIVmGR5M0bgYf3mg"
+    assert Installer._extract_public_key(output) == "rZgk4P_s1eZh1J7HjYb_WL58BYxJL6rvN_iujKtr4io"
+
+
 def test_installer_service_name_xray():
     installer = Installer(None, core="xray")  # type: ignore[arg-type]
     assert installer.service_name == "xray.service"

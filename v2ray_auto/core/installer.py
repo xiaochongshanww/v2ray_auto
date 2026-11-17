@@ -169,9 +169,10 @@ class Installer:
     @staticmethod
     def _extract_public_key(output: str) -> str:
         # Supports:
+        #   "Password: <key>" (v25.9.x format, bare label)
         #   "Password (PublicKey): <key>" (new format)
         #   "Public key: <key>" (old format)
-        match = re.search(r"(?:Password \(PublicKey\)|Public key):\s*([A-Za-z0-9_-]+)", output)
+        match = re.search(r"(?:Password \(PublicKey\)|Public\s*[Kk]ey|Password):\s*([A-Za-z0-9_-]+)", output)
         if not match:
             raise ConfigError("无法解析 xray 输出的公钥", detail="failed to parse public key")
         return match.group(1)
